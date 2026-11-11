@@ -1,0 +1,43 @@
+{
+  "name": "fiber-inventory-portal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
+    "start": "next start",
+    "lint": "tsc -p tsconfig.typecheck.json --noEmit --pretty false",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit --pretty false",
+    "seed": "tsx prisma/seed.ts",
+    "inspect:legacy": "tsx scripts/inspect-legacy-template.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.7.0",
+    "@xyflow/react": "^12.4.4",
+    "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
+    "exceljs": "^4.4.0",
+    "lucide-react": "^0.511.0",
+    "next": "^15.3.1",
+    "nodemailer": "^6.9.16",
+    "pg": "^8.22.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.3",
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/nodemailer": "^6.4.17",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "prisma": "^6.7.0",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

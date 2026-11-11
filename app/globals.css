@@ -1,0 +1,2480 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   FIBER INVENTORY PORTAL — DESIGN SYSTEM
+   Token-driven, two-theme (light / dark) presentation layer.
+   - No pure black anywhere; dark mode is built on slate / deep-navy bases.
+   - Text contrast >= 4.5:1, large graphics >= 3:1 in both themes.
+   - backdrop-filter is restricted to single structural chrome elements
+     (sidebar, topbar, modal panel) — never repeated table rows or cells.
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   1. Design tokens(For Blocks Colour)
+---------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* Page + surfaces (soft off-whites; never blinding pure white page bg) */
+  --page-bg-solid: #ebf1eb;
+  --page-bg: radial-gradient(1100px 500px at 88% -120px, rgba(247, 229, 229, 0.05), transparent 30%),
+             linear-gradient(180deg, #8caafc 0%, #e5e5f900 10%);
+  --surface: #ddedf600;
+  --surface-2: #eef4f8;
+  --surface-3: #e0edf5;
+
+  /* Typography */
+  --text-main: #16202e;
+  --text-strong: #0c1422;
+  --muted-text: #25272a;
+  --faint-text: #333a41;
+
+  /* Lines + depth */
+  --border: #010810;
+  --border-strong: #c8d2de;
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.05);
+  --shadow-lift: 0 2px 6px rgba(15, 23, 42, 0.07), 0 18px 48px rgba(15, 23, 42, 0.10);
+
+  /* Brand accent (crimson) */
+  --accent: #dc2626;
+  --accent-strong: #b91c1c;
+  --accent-text: #b42121;
+  --accent-soft: #fdf0f0;
+  --accent-soft-border: #f5d4d4;
+  --focus-ring: rgba(220, 38, 38, 0.55);
+  --focus-halo: rgba(220, 38, 38, 0.14);
+
+  /* Structural glass chrome */
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-bg-solid: #fbfcfe;
+  --glass-border: rgba(15, 23, 42, 0.08);
+
+  /* Tables */
+  --table-bg: #e3edf8;
+  --table-head-bg: #bad4f5;
+  --table-border: #17457c;
+  --table-row-hover: #dde8f7;
+  --table-row-stripe: rgba(100, 116, 139, 0.045);
+
+  /* Inputs + controls */
+  --input-bg: #ffffff;
+  --input-text: #16202e;
+  --control-bg: #ffffff;
+  --control-hover-bg: #f1f5f9;
+  --control-selected-bg: #fdeaea;
+  --control-selected-text: #9b1c1c;
+
+  /* Misc */
+  --scrollbar-thumb: #c5cfdb;
+  --scrollbar-track: transparent;
+  --backdrop: rgba(15, 23, 42, 0.32);
+
+  /* Legacy aliases kept so any straggler styles stay themed */
+  --card-bg: var(--surface);
+  --card-border: var(--border);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Deep navy / slate bases — pure #000 is prohibited */
+  --page-bg-solid: #0f172a;
+  --page-bg: radial-gradient(1100px 520px at 85% -140px, rgba(220, 38, 38, 0.09), transparent 60%),
+             linear-gradient(180deg, #0c1322 0%, #0f172a 55%, #101a30 100%);
+  --surface: #161f33;
+  --surface-2: #1c2740;
+  --surface-3: #22304b;
+
+  --text-main: #e7edf5;
+  --text-strong: #f8fafc;
+  --muted-text: #a3b2c5;
+  --faint-text: #8595aa;
+
+  --border: rgba(148, 163, 184, 0.17);
+  --border-strong: rgba(148, 163, 184, 0.32);
+  --shadow-soft: 0 1px 2px rgba(2, 6, 23, 0.5), 0 10px 30px rgba(2, 6, 23, 0.35);
+  --shadow-lift: 0 2px 8px rgba(2, 6, 23, 0.55), 0 22px 60px rgba(2, 6, 23, 0.5);
+
+  --accent: #ef4444;
+  --accent-strong: #dc2626;
+  --accent-text: #fda4a4;
+  --accent-soft: rgba(239, 68, 68, 0.12);
+  --accent-soft-border: rgba(239, 68, 68, 0.32);
+  --focus-ring: rgba(248, 113, 113, 0.7);
+  --focus-halo: rgba(248, 113, 113, 0.16);
+
+  /* Dark-mode glass needs a denser surface so the blur keeps text legible. */
+  --glass-bg: rgba(15, 23, 42, 0.92);
+  --glass-bg-solid: #111827;
+  --glass-border: rgba(148, 163, 184, 0.24);
+
+  --table-bg: #141d31;
+  --table-head-bg: #1a2540;
+  --table-border: rgba(148, 163, 184, 0.15);
+  --table-row-hover: rgba(56, 122, 223, 0.10);
+  --table-row-stripe: rgba(148, 163, 184, 0.05);
+
+  --input-bg: #101a2e;
+  --input-text: #eef3f9;
+  --control-bg: #18233b;
+  --control-hover-bg: #223150;
+  --control-selected-bg: rgba(239, 68, 68, 0.16);
+  --control-selected-text: #fecaca;
+
+  --scrollbar-thumb: #324259;
+  --scrollbar-track: transparent;
+  --backdrop: rgba(2, 6, 23, 0.68);
+
+  --card-bg: var(--surface);
+  --card-border: var(--border);
+}
+
+/* ----------------------------------------------------------------------------
+   2. Base
+---------------------------------------------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--page-bg);
+  background-attachment: fixed;
+  color: var(--text-main);
+}
+
+html[data-theme="dark"] body {
+  background-color: #0f172a;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "tnum";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--focus-halo);
+  color: var(--text-strong);
+}
+
+/* Themed thin scrollbars (high-traffic data surfaces scroll a lot) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+/* Highly visible keyboard focus (WCAG 2.4.7) */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none; /* inputs use their own ring treatment below */
+}
+
+button,
+a,
+select,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Generous click targets across all interactive chrome */
+button,
+a[role="button"] {
+  min-height: 2.35rem;
+}
+
+/* Enlarged, brand-tinted checkboxes — clearly bigger than browser defaults */
+input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  flex: none;
+  cursor: pointer;
+  accent-color: var(--accent);
+  border-radius: 0.3rem;
+}
+
+input[type="radio"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+/* Child-link selection checkboxes get an extra size bump for rapid bulk work */
+.child-link-checkbox {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   3. Structural glass chrome (sidebar / topbar / modal only)
+---------------------------------------------------------------------------- */
+.glass-chrome {
+  background: var(--glass-bg-solid);
+  border-color: var(--glass-border);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-chrome {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    backdrop-filter: blur(18px) saturate(1.5);
+  }
+}
+
+.app-sidebar {
+  width: 18rem;
+  border-right: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft);
+  transition: width 0.22s ease;
+}
+
+/* Contractable sidebar: labels collapse away, icons stay, content widens. */
+.sidebar-collapsed .app-sidebar {
+  width: 5.25rem;
+}
+.sidebar-collapsed .app-sidebar .sidebar-label {
+  display: none;
+}
+.sidebar-collapsed .app-sidebar .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+/* Hide only the text label when collapsed — the coloured icon chip stays. */
+.sidebar-collapsed .app-sidebar .nav-label {
+  display: none;
+}
+
+.app-content-shell {
+  transition: padding-left 0.22s ease;
+}
+@media (min-width: 1024px) {
+  .app-content-shell {
+    padding-left: 18rem;
+  }
+  .sidebar-collapsed .app-content-shell {
+    padding-left: 5.25rem;
+  }
+}
+
+.sidebar-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface-2);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.sidebar-collapse-btn:hover {
+  background: var(--control-hover-bg);
+  color: var(--text-strong);
+}
+
+.app-topbar {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Sidebar navigation — colour-coded rail. Each item carries its own hue via
+   the --nav-rgb custom property set inline by SidebarNav. */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-text);
+  position: relative;
+  /* GPU-bound: only transform/opacity/background animate, never layout. */
+  transition: background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  will-change: transform;
+}
+
+/* Coloured icon chip — a tinted rounded square that carries the item hue. */
+.nav-icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2rem;
+  width: 2rem;
+  flex: none;
+  border-radius: 0.6rem;
+  color: rgb(var(--nav-rgb));
+  background: rgb(var(--nav-rgb) / 0.13);
+  box-shadow: inset 0 0 0 1px rgb(var(--nav-rgb) / 0.22);
+  transition: transform 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+.nav-label {
+  min-width: 0;
+}
+
+/* Indigo accent for hover/active — a single corporate highlight colour rather
+   than per-item hues. (--nav-accent is indigo-500.) */
+.nav-item {
+  --nav-accent: 99 102 241; /* indigo-500 */
+}
+.nav-item:hover {
+  background: rgb(var(--nav-accent) / 0.12);
+  color: var(--text-strong);
+  transform: translateX(2px);
+}
+.nav-item:hover .nav-icon-chip {
+  transform: scale(1.06);
+  color: rgb(var(--nav-accent));
+  background: rgb(var(--nav-accent) / 0.18);
+  box-shadow: inset 0 0 0 1px rgb(var(--nav-accent) / 0.32);
+}
+
+/* Active item: indigo chip + subtle indigo-500/20 track + a left accent bar. */
+.nav-item-active,
+.nav-item-active:hover {
+  background: rgb(var(--nav-accent) / 0.16);
+  color: var(--text-strong);
+  font-weight: 600;
+  transform: none;
+}
+.nav-item-active::before {
+  content: "";
+  position: absolute;
+  left: -0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 1.5rem;
+  width: 3px;
+  border-radius: 999px;
+  background: rgb(var(--nav-accent));
+}
+.nav-item-active .nav-icon-chip {
+  color: #fff;
+  background: rgb(var(--nav-accent));
+  box-shadow: 0 4px 14px rgb(var(--nav-accent) / 0.4);
+}
+
+/* Collapsed rail keeps the chips centred and hides labels. */
+.sidebar-collapsed .app-sidebar .nav-icon-chip {
+  margin: 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-item,
+  .nav-icon-chip {
+    transition: background-color 0.16s ease, color 0.16s ease;
+  }
+  .nav-item:hover {
+    transform: none;
+  }
+  .nav-item:hover .nav-icon-chip {
+    transform: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   4. Surfaces
+---------------------------------------------------------------------------- */
+.card {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  color: var(--text-main);
+  box-shadow: var(--shadow-soft);
+}
+
+.kpi-card {
+  @apply card p-5;
+}
+
+.section-title {
+  @apply text-lg font-semibold tracking-tight;
+  color: var(--text-strong);
+}
+
+.subtle {
+  @apply text-sm;
+  color: var(--muted-text);
+}
+
+.operational-panel-note,
+.card .subtle,
+.card small {
+  color: var(--muted-text);
+}
+
+.card label,
+.card .section-title,
+.card .subtle {
+  line-height: 1.45;
+}
+
+/* Buttons placed on cards inherit smooth state transitions */
+.card button,
+.card a {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+  border-color: var(--border);
+}
+
+.card button:hover:not(:disabled):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-violet"]):not([class*="bg-cyan"]):not([class*="bg-emerald"]):not(.btn-primary),
+.card a:hover:not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-violet"]):not([class*="bg-cyan"]):not([class*="bg-emerald"]):not(.btn-primary) {
+  background-color: var(--control-hover-bg);
+  border-color: var(--border-strong);
+}
+
+.card button:disabled,
+.card a[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Shared button primitives for redesigned components */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.65rem;
+  border: 1px solid transparent;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(185, 28, 28, 0.25), 0 6px 18px rgba(220, 38, 38, 0.18);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-strong) !important;
+  color: #ffffff;
+}
+.btn-ghost {
+  background: var(--control-bg);
+  border-color: var(--border);
+  color: var(--text-main);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--control-hover-bg);
+  border-color: var(--border-strong);
+}
+.btn-danger-soft {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft-border);
+  color: var(--accent-text);
+}
+.btn-danger-soft:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.btn-compact {
+  min-height: 2rem;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.55rem;
+}
+
+/* ----------------------------------------------------------------------------
+   Light Mode contrast floor (accessibility)
+   slate-300/400 informational text reads washed-out on light surfaces. Lift it
+   to a legible slate-600/500 in Light Mode ONLY. Dark Mode keeps Tailwind's
+   values via the higher-specificity html[data-theme="dark"] guard, so this
+   never affects the dark theme. The selector specificity (0,2,1) outranks the
+   bare utility (0,1,0), so no !important is needed.
+---------------------------------------------------------------------------- */
+html:not([data-theme="dark"]) .text-slate-400,
+html:not([data-theme="dark"]) .text-gray-400 { color: #475569; }   /* slate-600 */
+html:not([data-theme="dark"]) .text-slate-300,
+html:not([data-theme="dark"]) .text-gray-300 { color: #64748b; }   /* slate-500 */
+
+
+
+
+/* ----------------------------------------------------------------------------
+   5. Inputs
+---------------------------------------------------------------------------- */
+/* Compact field label for dense form grids (keeps a field identifiable once its
+   placeholder is hidden by a value). */
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-text);
+}
+
+.input-dark {
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--input-bg);
+  color: var(--input-text);
+  padding: 0.62rem 0.9rem;
+  font-size: 0.875rem;
+  min-height: 2.6rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.input-dark::placeholder {
+  color: var(--faint-text);
+  opacity: 1;
+}
+.input-dark:hover:not(:disabled):not(:focus) {
+  border-color: var(--border-strong);
+}
+.input-dark:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--focus-halo);
+}
+.input-dark:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.input-dark option {
+  background: var(--input-bg);
+  color: var(--input-text);
+}
+
+/* Kill every native artifact that draws circular icons / clear buttons inside
+   search-like and datalist-bound inputs. Inputs keep only ghosted placeholders. */
+.input-dark::-webkit-calendar-picker-indicator,
+input[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+.input-dark::-webkit-list-button,
+input[list]::-webkit-list-button {
+  display: none !important;
+}
+.input-dark::-webkit-search-cancel-button,
+.input-dark::-webkit-search-results-button,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button {
+  display: none !important;
+}
+
+.fixed .input-dark {
+  min-width: 0;
+}
+
+/* ----------------------------------------------------------------------------
+   6. Auto-suggest dropdown (custom predictive text component)
+---------------------------------------------------------------------------- */
+.suggest-wrap {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.suggest-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 999;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: var(--shadow-lift);
+  padding: 0.3rem;
+}
+
+html[data-theme="dark"] .suggest-menu {
+  background: var(--surface);
+}
+
+.suggest-option {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  border: 0;
+  background: transparent;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  cursor: pointer;
+  min-height: 2.25rem;
+}
+.suggest-option:hover,
+.suggest-option[data-active="true"] {
+  background: var(--control-hover-bg);
+}
+.suggest-option[data-active="true"] {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.suggest-option-value {
+  font-weight: 600;
+  color: var(--text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.suggest-option-hint {
+  flex: none;
+  max-width: 55%;
+  font-size: 0.72rem;
+  color: var(--muted-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.suggest-empty {
+  padding: 0.55rem 0.65rem;
+  font-size: 0.8rem;
+  color: var(--faint-text);
+}
+
+/* ----------------------------------------------------------------------------
+   7. Badges — status, topology roles, service tags
+---------------------------------------------------------------------------- */
+.badge {
+  @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Status family (light) */
+/* Active = freed-look light-green tint, legible dark-on-light. The prior
+   value put dark-green text (#056647) on a dark-green fill (#0c5533),
+   rendering the label nearly invisible in Light Mode. */
+.badge-active        { border-color: rgba(5, 150, 105, 0.34);  background: #d6f3e4; color: #066a40; }
+/* "Available" resources read as clear light green branding (a freed/usable
+   port), distinct from the blue "spare" tone and never washed-out grey. */
+.badge-available     { border-color: rgba(22, 163, 74, 0.40);  background: #dcfce7; color: #15803d; }
+.badge-spare         { border-color: rgba(2, 132, 199, 0.28);  background: #eef7fd; color: #075e8d; }
+.badge-reserved      { border-color: rgba(180, 83, 9, 0.30);   background: #fdf4e3; color: #8a4b06; }
+.badge-faulty        { border-color: rgba(225, 29, 72, 0.28);  background: #fdeef1; color: #a8123e; }
+.badge-planned       { border-color: rgba(124, 58, 237, 0.28); background: #f4f0fd; color: #5d2bb8; }
+.badge-rehomed       { border-color: rgba(234, 88, 12, 0.32);  background: #fdf1e7; color: #973f08; }
+.badge-decommissioned{ border-color: var(--border-strong);     background: var(--surface-3); color: var(--muted-text); }
+
+/* Status family (dark) */
+html[data-theme="dark"] .badge-active         { background: rgba(16, 185, 129, 0.14); color: #6fe2b4; border-color: rgba(16, 185, 129, 0.36); }
+html[data-theme="dark"] .badge-available      { background: rgba(34, 197, 94, 0.18); color: #86efac; border-color: rgba(34, 197, 94, 0.42); }
+html[data-theme="dark"] .badge-spare          { background: rgba(14, 165, 233, 0.14); color: #7dd0f7; border-color: rgba(14, 165, 233, 0.36); }
+html[data-theme="dark"] .badge-reserved       { background: rgba(245, 158, 11, 0.14); color: #fcd28a; border-color: rgba(245, 158, 11, 0.36); }
+html[data-theme="dark"] .badge-faulty         { background: rgba(244, 63, 94, 0.15);  color: #fda4b5; border-color: rgba(244, 63, 94, 0.38); }
+html[data-theme="dark"] .badge-planned        { background: rgba(139, 92, 246, 0.16); color: #cdb6fb; border-color: rgba(139, 92, 246, 0.38); }
+html[data-theme="dark"] .badge-rehomed        { background: rgba(249, 115, 22, 0.15); color: #fcbc8c; border-color: rgba(249, 115, 22, 0.40); }
+html[data-theme="dark"] .badge-decommissioned { background: rgba(148, 163, 184, 0.12); color: #aebccd; border-color: rgba(148, 163, 184, 0.30); }
+
+/* Topology role family — light defaults, dark overrides */
+.topology-role-main-ring    { border: 1.5px solid rgba(2, 132, 199, 0.55);  background: #eaf6fd; color: #064a6f; font-weight: 700; }
+.topology-role-single-homed { border: 1.5px solid rgba(5, 150, 105, 0.55);  background: #e9faf2; color: #044d36; font-weight: 700; }
+.topology-role-subring      { border: 1.5px solid rgba(147, 51, 234, 0.52); background: #f6effd; color: #581c87; font-weight: 700; }
+.topology-role-spur         { border: 1.5px solid rgba(180, 83, 9, 0.55);   background: #fdf4e3; color: #6e3c05; font-weight: 700; }
+.topology-role-spur-chain   { border: 1.5px solid rgba(194, 65, 12, 0.56);  background: #fdefe5; color: #7a3509; font-weight: 700; }
+.topology-role-interconnect { border: 1.5px solid rgba(13, 148, 136, 0.55); background: #e8faf8; color: #095953; font-weight: 700; }
+.topology-role-review       { border: 1.5px solid rgba(220, 38, 38, 0.56);  background: #fdeeee; color: #871717; font-weight: 700; }
+
+html[data-theme="dark"] .topology-role-main-ring    { background: rgba(14, 165, 233, 0.14); color: #93dbfb; border-color: rgba(56, 189, 248, 0.36); }
+html[data-theme="dark"] .topology-role-single-homed { background: rgba(16, 185, 129, 0.16); color: #79e6bc; border-color: rgba(52, 211, 153, 0.42); }
+html[data-theme="dark"] .topology-role-subring      { background: rgba(126, 34, 206, 0.20); color: #ddc3fb; border-color: rgba(168, 85, 247, 0.42); }
+html[data-theme="dark"] .topology-role-spur         { background: rgba(180, 83, 9, 0.20);   color: #fbdb94; border-color: rgba(245, 158, 11, 0.48); }
+html[data-theme="dark"] .topology-role-spur-chain   { background: rgba(194, 65, 12, 0.22);  color: #fcc89e; border-color: rgba(249, 115, 22, 0.50); }
+html[data-theme="dark"] .topology-role-interconnect { background: rgba(15, 118, 110, 0.20); color: #a4f0e7; border-color: rgba(45, 212, 191, 0.45); }
+html[data-theme="dark"] .topology-role-review       { background: rgba(127, 29, 29, 0.26);  color: #fbb9b9; border-color: rgba(248, 113, 113, 0.55); }
+
+/* Service tag family — distinct hue per tag; ISP-SPL and OSP-SPL must read apart */
+.tag-badge {
+  @apply inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.tag-a-mpls       { border-color: rgba(79, 70, 229, 0.30);  background: #efeffd; color: #4032b8; }
+.tag-backbone     { border-color: rgba(2, 132, 199, 0.30);  background: #eaf6fd; color: #075e8d; }
+.tag-b2b          { border-color: rgba(192, 38, 211, 0.28); background: #fbeffd; color: #92159f; }
+.tag-mpls-core    { border-color: rgba(124, 58, 237, 0.30); background: #f4f0fd; color: #5d2bb8; }
+.tag-interconnect { border-color: rgba(13, 148, 136, 0.32); background: #e8faf8; color: #0b6e66; }
+.tag-isp-spl      { border-color: rgba(8, 145, 178, 0.34);  background: #e7f8fc; color: #0d6880; }
+.tag-osp-spl      { border-color: rgba(202, 138, 4, 0.36);  background: #fdf7e2; color: #7d5d05; }
+.tag-none         { border-color: var(--border); background: var(--surface-2); color: var(--muted-text); }
+
+html[data-theme="dark"] .tag-a-mpls       { background: rgba(99, 102, 241, 0.16);  color: #bcc1fb; border-color: rgba(129, 140, 248, 0.40); }
+html[data-theme="dark"] .tag-backbone     { background: rgba(14, 165, 233, 0.14);  color: #93dbfb; border-color: rgba(56, 189, 248, 0.38); }
+html[data-theme="dark"] .tag-b2b          { background: rgba(217, 70, 239, 0.15);  color: #f2bbfa; border-color: rgba(232, 121, 249, 0.40); }
+html[data-theme="dark"] .tag-mpls-core    { background: rgba(139, 92, 246, 0.16);  color: #cdb6fb; border-color: rgba(167, 139, 250, 0.40); }
+html[data-theme="dark"] .tag-interconnect { background: rgba(20, 184, 166, 0.15);  color: #93eadf; border-color: rgba(45, 212, 191, 0.42); }
+html[data-theme="dark"] .tag-isp-spl      { background: rgba(6, 182, 212, 0.15);   color: #8be2f5; border-color: rgba(34, 211, 238, 0.45); }
+html[data-theme="dark"] .tag-osp-spl      { background: rgba(234, 179, 8, 0.15);   color: #f3da7e; border-color: rgba(250, 204, 21, 0.45); }
+html[data-theme="dark"] .tag-none         { background: rgba(148, 163, 184, 0.10); color: #a3b2c5; border-color: rgba(148, 163, 184, 0.26); }
+
+/* ----------------------------------------------------------------------------
+   8. Tables — primary data surfaces (flat + ultra-performant; no glass here)
+---------------------------------------------------------------------------- */
+.table-shell {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 1px solid var(--table-border);
+  border-radius: 0.85rem;
+  background: var(--table-bg);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+}
+
+.table-shell table {
+  /* Full-bleed: fill the shell so wide monitors do not leave a right-side gap.
+     Heavy grids set a fixed px min-width (e.g. inventory-segment-table 1580px)
+     which previously capped a max-content table below the viewport width.
+     width:100% + that min-width = stretch when wide, scroll when narrow.
+     Nested data tables (.child-link-table, .splitter-output-table,
+     .impact-result-table) keep their own width:max-content below. */
+  width: 100%;
+  min-width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.table-shell th {
+  border-bottom: 1px solid var(--table-border);
+  background: var(--table-head-bg);
+  color: var(--muted-text);
+  padding: 0.78rem 1rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+html[data-theme="dark"] .table-shell th {
+  color: #cbd5e1;
+}
+
+.table-shell td {
+  border-bottom: 1px solid var(--table-border);
+  color: var(--text-main);
+  padding: 0.78rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  white-space: nowrap;
+  vertical-align: top;
+  background-clip: padding-box;
+}
+
+.table-shell tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table-shell tbody tr:hover td {
+  background: var(--table-row-hover);
+}
+
+.table-shell td.break-cell,
+.break-cell {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 160px;
+  max-width: 360px;
+}
+
+.cell-wrap,
+.service-cell,
+.customer-cell {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.table-shell .subtle,
+.table-shell td .subtle {
+  white-space: normal;
+}
+
+/* Sticky action columns stay disabled: they visually overlapped long telecom tables. */
+.table-shell th.sticky-action,
+.table-shell td.sticky-action,
+.child-link-table th.sticky-action,
+.child-link-table td.sticky-action,
+.impact-result-table th.sticky-action,
+.impact-result-table td.sticky-action {
+  position: static;
+  right: auto;
+  z-index: auto;
+  background: inherit;
+}
+
+.table-shell th.sticky-action,
+.table-shell td.sticky-action {
+  min-width: 220px;
+}
+
+.odf-row-actions {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.odf-rack-table-shell td.odf-delete-error-anchor {
+  position: relative !important;
+  z-index: 55;
+  overflow: visible;
+}
+
+.odf-delete-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.55rem);
+  z-index: 70;
+  width: min(28rem, calc(100vw - 2rem));
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  border-radius: 0.75rem;
+  background: #fff7f7;
+  color: #7f1d1d;
+  padding: 0.9rem;
+  box-shadow: var(--shadow-lift);
+  white-space: normal;
+}
+
+.odf-delete-popover::before {
+  content: "";
+  position: absolute;
+  top: -0.42rem;
+  right: 1.5rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(220, 38, 38, 0.28);
+  border-top: 1px solid rgba(220, 38, 38, 0.28);
+  background: #fff7f7;
+}
+
+.odf-delete-popover-close {
+  display: inline-flex;
+  min-height: 1.75rem;
+  width: 1.75rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.45rem;
+  color: #991b1b;
+}
+
+.odf-delete-popover-close:hover {
+  background: rgba(220, 38, 38, 0.12);
+}
+
+html[data-theme="dark"] .odf-delete-popover {
+  border-color: rgba(248, 113, 113, 0.36);
+  background: #3b1218;
+  color: #fecaca;
+}
+
+html[data-theme="dark"] .odf-delete-popover::before {
+  border-color: rgba(248, 113, 113, 0.36);
+  background: #3b1218;
+}
+
+html[data-theme="dark"] .odf-delete-popover-close {
+  color: #fecaca;
+}
+
+@media (max-width: 640px) {
+  .odf-delete-popover {
+    position: fixed;
+    inset: auto 1rem 1rem 1rem;
+    width: auto;
+    max-height: min(70vh, 28rem);
+    overflow: auto;
+  }
+
+  .odf-delete-popover::before {
+    display: none;
+  }
+}
+
+/* Nested expanded tables get their own scroll surface */
+.table-shell td[colspan] > div,
+.table-shell td[colspan] > section {
+  max-width: calc(100vw - 145px);
+  overflow-x: auto;
+}
+
+/* Freeze panes for the three heavy telecom inventory tables only. */
+.inventory-table-shell,
+.odf-rack-table-shell,
+.splitter-table-shell {
+  max-height: calc(100vh - 15rem);
+  overflow: auto !important;
+}
+
+.inventory-table-shell thead th,
+.odf-rack-table-shell thead th,
+.splitter-table-shell thead th {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--table-head-bg) !important;
+  box-shadow: 0 1px 0 var(--table-border);
+}
+
+.inventory-table-shell table.inventory-segment-table {
+  min-width: 1580px;
+}
+
+/* Root ODF Mappings table: first three columns frozen (select / expand / name) */
+.inventory-table-shell > table.inventory-segment-table > thead > tr > th:first-child,
+.inventory-table-shell > table.inventory-segment-table > tbody > tr:not(.child-detail-row) > td:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 25;
+  min-width: 54px;
+  width: 54px;
+  background: var(--table-bg) !important;
+}
+
+.inventory-table-shell > table.inventory-segment-table > thead > tr > th:nth-child(2),
+.inventory-table-shell > table.inventory-segment-table > tbody > tr:not(.child-detail-row) > td:nth-child(2) {
+  position: sticky !important;
+  left: 54px !important;
+  z-index: 25;
+  min-width: 54px;
+  width: 54px;
+  background: var(--table-bg) !important;
+}
+
+.inventory-table-shell > table.inventory-segment-table > thead > tr > th:nth-child(3),
+.inventory-table-shell > table.inventory-segment-table > tbody > tr:not(.child-detail-row) > td:nth-child(3) {
+  position: sticky !important;
+  left: 108px !important;
+  z-index: 24;
+  min-width: 260px;
+  background: var(--table-bg) !important;
+  box-shadow: 1px 0 0 var(--table-border), 10px 0 18px rgba(15, 23, 42, 0.08);
+}
+
+.inventory-table-shell > table.inventory-segment-table > thead > tr > th:first-child,
+.inventory-table-shell > table.inventory-segment-table > thead > tr > th:nth-child(2),
+.inventory-table-shell > table.inventory-segment-table > thead > tr > th:nth-child(3) {
+  z-index: 45;
+  background: var(--table-head-bg) !important;
+}
+
+.odf-rack-table-shell th:first-child,
+.odf-rack-table-shell td:first-child,
+.splitter-table-shell th:first-child,
+.splitter-table-shell td:first-child {
+  position: sticky !important;
+  left: 0;
+  z-index: 25;
+  min-width: 180px;
+  background: var(--table-bg) !important;
+  box-shadow: 1px 0 0 var(--table-border), 10px 0 18px rgba(15, 23, 42, 0.08);
+}
+
+.odf-rack-table-shell thead th:first-child,
+.splitter-table-shell thead th:first-child {
+  z-index: 45;
+  background: var(--table-head-bg) !important;
+}
+
+/* Freeze-pane fix: the "Actions" header cell carries .sticky-action, whose
+   `.table-shell th.sticky-action { position: static }` rule (specificity 0,2,1)
+   outranks the generic `.odf-rack-table-shell thead th { position: sticky }`
+   (0,1,2). That left the Actions title scrolling free of the rest of the
+   header row on vertical scroll. Re-pin it to the top (vertical freeze only —
+   no horizontal stickiness, so it never overlaps the body) at the same layer
+   as its sibling header cells. Specificity (0,2,2) wins cleanly. */
+.odf-rack-table-shell thead th.sticky-action,
+.inventory-table-shell thead th.sticky-action,
+.splitter-table-shell thead th.sticky-action {
+  position: sticky !important;
+  top: 0;
+  right: auto;
+  z-index: 30;
+  background: var(--table-head-bg) !important;
+}
+
+/* Header lock for standard data tables (Trace & Provision, Allocation,
+   Attachments, etc.): freeze the header row so column titles stay visible while
+   scrolling. Scoped with > combinators to the table that is a DIRECT child of
+   the shell, so nested child tables are unaffected; and excluded on the three
+   heavy freeze-pane grids, which define their own higher-z sticky headers
+   above. The header background prevents body rows showing through. */
+.table-shell:not(.odf-rack-table-shell):not(.inventory-table-shell):not(.splitter-table-shell) > table > thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--table-head-bg);
+}
+
+/* Expanded child rows must not inherit root freeze-pane geometry */
+.inventory-table-shell .child-link-table th:first-child,
+.inventory-table-shell .child-link-table td:first-child,
+.inventory-table-shell .child-link-table th:nth-child(2),
+.inventory-table-shell .child-link-table td:nth-child(2),
+.inventory-table-shell .child-link-table th:nth-child(3),
+.inventory-table-shell .child-link-table td:nth-child(3) {
+  position: static !important;
+  left: auto !important;
+  z-index: auto !important;
+  width: auto;
+  min-width: initial;
+  box-shadow: none !important;
+}
+
+/* Child detail rows (expanded parent segments) */
+.child-detail-row > td {
+  background: var(--surface-2) !important;
+  padding: 0.9rem 1rem !important;
+  max-width: calc(100vw - 120px);
+  overflow: hidden;
+}
+
+.child-detail-row > td[colspan] {
+  min-width: 0;
+}
+
+.child-table-shell {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  border: 1px solid var(--table-border);
+  border-radius: 0.75rem;
+  background: var(--table-bg);
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.35rem;
+}
+
+.child-link-table {
+  width: 100% !important;
+  min-width: 1480px !important;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.child-link-table th,
+.child-link-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--table-border);
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.child-link-table th {
+  background: var(--table-head-bg);
+  color: var(--muted-text);
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.child-link-table td {
+  color: var(--text-main);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background-clip: padding-box;
+}
+
+.child-link-table tbody tr:hover td {
+  background: var(--table-row-hover);
+}
+
+.child-link-table th:first-child,
+.child-link-table td:first-child {
+  width: 56px !important;
+  min-width: 56px !important;
+  max-width: 56px !important;
+  text-align: center;
+}
+
+.child-link-table th:nth-child(2),
+.child-link-table td:nth-child(2) {
+  min-width: 240px !important;
+  max-width: 320px;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.child-link-table th:nth-child(7),
+.child-link-table td:nth-child(7),
+.child-link-table th:nth-child(11),
+.child-link-table td:nth-child(11) {
+  min-width: 150px;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+.child-link-table th:last-child,
+.child-link-table td:last-child {
+  min-width: 210px;
+}
+
+.child-empty-panel {
+  border: 1px dashed var(--border-strong);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: var(--surface-2);
+  color: var(--text-main);
+}
+
+/* Nested splitter output tables share the internal scrolling treatment */
+.splitter-output-shell {
+  display: block;
+  width: 100%;
+  max-width: calc(100vw - 145px);
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  border: 1px solid var(--table-border);
+  border-radius: 0.75rem;
+  background: var(--table-bg);
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.35rem;
+}
+
+.splitter-output-table {
+  min-width: 1320px !important;
+  width: max-content;
+  border-collapse: collapse;
+}
+
+.splitter-output-table th,
+.splitter-output-table td {
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.splitter-output-table td {
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.splitter-output-table th:first-child,
+.splitter-output-table td:first-child {
+  position: static !important;
+  left: auto !important;
+  box-shadow: none !important;
+}
+
+/* ----------------------------------------------------------------------------
+   9. Contextual bulk-action bar (multi-row selection)
+---------------------------------------------------------------------------- */
+.bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--accent-soft-border);
+  border-radius: 0.85rem;
+  background: var(--accent-soft);
+  padding: 0.6rem 0.9rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.bulk-bar-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.bulk-bar-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+}
+
+.bulk-bar .input-dark {
+  min-height: 2.25rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+/* ----------------------------------------------------------------------------
+   10. Modals — right-docked work drawers over a dimmed page
+---------------------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--backdrop);
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.modal-panel {
+  pointer-events: auto;
+  margin: 0;
+  width: min(100%, 980px);
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  background: var(--glass-bg-solid);
+  color: var(--text-main);
+  padding: 1.4rem;
+  box-shadow: var(--shadow-lift);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .modal-panel {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    backdrop-filter: blur(20px) saturate(1.5);
+  }
+}
+
+.modal-panel.modal-small { width: min(100%, 720px); }
+.modal-panel.modal-large { width: min(100%, 1040px); }
+.modal-panel.modal-wide  { width: min(100%, 1180px); }
+
+/* Backdrop-less draggable panel: the layer captures NO pointer events, so the
+   inventory tables underneath stay fully scrollable/clickable. Only the panel
+   is interactive, and it is repositioned via its drag handle. */
+.draggable-layer { position: fixed; inset: 0; z-index: 75; pointer-events: none; }
+.draggable-panel { position: fixed; margin: 0; padding: 0; max-width: min(96vw, 1180px); }
+.draggable-panel .draggable-body { padding: 1.25rem 1.4rem 1.4rem; }
+.draggable-handle {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
+  padding: 0.8rem 1rem; cursor: grab; touch-action: none; user-select: none;
+  border-bottom: 1px solid var(--glass-border); border-radius: 1rem 1rem 0 0;
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.06));
+}
+.draggable-handle:active { cursor: grabbing; }
+.draggable-close {
+  display: inline-flex; align-items: center; justify-content: center; height: 2rem; width: 2rem;
+  border-radius: 0.6rem; border: 1px solid var(--glass-border); background: transparent; pointer-events: auto;
+}
+
+.modal-panel .input-dark,
+.modal-panel input,
+.modal-panel select,
+.modal-panel textarea {
+  min-height: 2.5rem;
+}
+
+.fixed .card,
+.fixed [class*="bg-white"] {
+  color: var(--text-main);
+}
+
+@media (max-width: 900px) {
+  .modal-backdrop {
+    justify-content: center;
+    padding: 0.75rem;
+  }
+  .modal-panel {
+    max-width: calc(100vw - 1.5rem);
+    max-height: calc(100vh - 1.5rem);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   11. Layout plumbing
+---------------------------------------------------------------------------- */
+main {
+  width: 100%;
+}
+
+.lg\:pl-72 main,
+body main {
+  width: 100%;
+  max-width: none;
+}
+
+body main > div,
+body main > section {
+  width: 100%;
+  max-width: none;
+}
+
+/* ----------------------------------------------------------------------------
+   12. Loading state
+---------------------------------------------------------------------------- */
+.portal-loading-fullscreen {
+  min-height: calc(100vh - 6rem);
+  display: grid;
+  place-items: center;
+  color: var(--text-main);
+}
+
+.portal-loading-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-lift);
+}
+
+.portal-loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 4px solid var(--focus-halo);
+  border-top-color: var(--accent);
+  animation: portal-spin 0.9s linear infinite;
+}
+
+@keyframes portal-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------------------------------------------------------
+   13. Filter chips
+---------------------------------------------------------------------------- */
+.selected-filter-row,
+.selected-filter-row span,
+.selected-filter-row button {
+  color: var(--text-main);
+}
+
+.selected-filter-chip {
+  border: 1px solid var(--accent-soft-border);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------------------
+   13d. Utilization tier filter chips + inline saturation bars
+---------------------------------------------------------------------------- */
+.util-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.util-filter-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+  margin-right: 0.15rem;
+}
+.util-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+  will-change: transform;
+}
+.util-chip:hover {
+  transform: translateY(-1px);
+  color: var(--text-strong);
+}
+.util-chip-dot {
+  height: 0.6rem;
+  width: 0.6rem;
+  border-radius: 999px;
+  background: currentColor;
+  flex: none;
+}
+.util-chip-count {
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.22);
+  padding: 0 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.util-chip-all { color: #64748b; }
+.util-chip-critical { color: #dc2626; }
+.util-chip-high { color: #ea580c; }
+.util-chip-moderate { color: #ca8a04; }
+.util-chip-normal { color: #059669; }
+.util-chip-active {
+  color: #fff;
+  border-color: transparent;
+}
+.util-chip-all.util-chip-active { background: #64748b; }
+.util-chip-critical.util-chip-active { background: #dc2626; }
+.util-chip-high.util-chip-active { background: #ea580c; }
+.util-chip-moderate.util-chip-active { background: #ca8a04; }
+.util-chip-normal.util-chip-active { background: #059669; }
+.util-chip-active .util-chip-count { background: rgba(251, 221, 221, 0.28); color: #fff; }
+
+.util-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 110px;
+}
+.util-cell-bar {
+  position: relative;
+  display: block;
+  height: 0.5rem;
+  width: 64px;
+  flex: none;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  overflow: hidden;
+}
+.util-cell-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+.util-cell-critical > span { background: #dc2626; }
+.util-cell-high > span { background: #ea580c; }
+.util-cell-moderate > span { background: #ca8a04; }
+.util-cell-normal > span { background: #059669; }
+.util-cell-pct {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
+}
+
+/* Solid fill segments for the splitter run-rate stacked bar. */
+.util-fill-critical { background: #dc2626; }
+.util-fill-high { background: #ea580c; }
+.util-fill-moderate { background: #ca8a04; }
+.util-fill-normal { background: #059669; }
+
+@media (prefers-reduced-motion: reduce) {
+  .util-chip:hover { transform: none; }
+}
+
+/* ----------------------------------------------------------------------------
+   13c. Import Center — explicit per-row lifecycle decision badges
+   (no ambiguous "Rejected / Skipped" composite)
+---------------------------------------------------------------------------- */
+.import-decision {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0.12rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.import-decision-committed { border-color: rgba(16,185,129,.4);  background: rgba(16,185,129,.12);  color: #047857; }
+.import-decision-ready     { border-color: rgba(14,165,233,.4);  background: rgba(14,165,233,.12);  color: #0369a1; }
+.import-decision-warning   { border-color: rgba(245,158,11,.45); background: rgba(245,158,11,.14);  color: #92400e; }
+.import-decision-blocked   { border-color: rgba(239,68,68,.45);  background: rgba(239,68,68,.12);   color: #b91c1c; }
+.import-decision-rejected  { border-color: rgba(220,38,38,.5);   background: rgba(220,38,38,.14);   color: #991b1b; }
+.import-decision-skipped   { border-color: rgba(148,163,184,.5); background: rgba(148,163,184,.16); color: #475569; }
+.import-decision-info      { border-color: rgba(139,92,246,.4);  background: rgba(139,92,246,.12);  color: #6d28d9; }
+.import-decision-neutral   { border-color: rgba(148,163,184,.4); background: rgba(148,163,184,.10); color: #64748b; }
+
+html[data-theme="dark"] .import-decision-committed { color: #6ee7b7; }
+html[data-theme="dark"] .import-decision-ready     { color: #7dd3fc; }
+html[data-theme="dark"] .import-decision-warning   { color: #fcd34d; }
+html[data-theme="dark"] .import-decision-blocked   { color: #fca5a5; }
+html[data-theme="dark"] .import-decision-rejected  { color: #fda4af; }
+html[data-theme="dark"] .import-decision-skipped   { color: #cbd5e1; }
+html[data-theme="dark"] .import-decision-info      { color: #c4b5fd; }
+html[data-theme="dark"] .import-decision-neutral   { color: #cbd5e1; }
+
+/* ----------------------------------------------------------------------------
+   13b. Import Center — staged rows already committed to ODF Mappings
+---------------------------------------------------------------------------- */
+.import-row-committed td {
+  background-color: rgba(16, 185, 129, 0.10) !important;
+}
+.import-row-committed td:first-child {
+  box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.65);
+}
+html[data-theme="dark"] .import-row-committed td {
+  background-color: rgba(16, 185, 129, 0.13) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   14. Impact analysis surfaces
+---------------------------------------------------------------------------- */
+.impact-badge-red {
+  border-color: var(--accent-soft-border);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.impact-badge-amber {
+  border-color: rgba(180, 83, 9, 0.34);
+  background: #fdf4e3;
+  color: #8a4b06;
+}
+html[data-theme="dark"] .impact-badge-amber {
+  background: rgba(120, 53, 15, 0.35);
+  color: #fcd28a;
+}
+
+/* Deferred-analysis loading + pre-run states */
+.impact-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.impact-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(148, 163, 184, 0.18) 50%, transparent 100%);
+  animation: impact-shimmer 1.25s ease-in-out infinite;
+}
+@keyframes impact-shimmer {
+  100% { transform: translateX(100%); }
+}
+.impact-prerun-orb {
+  display: grid;
+  place-items: center;
+  height: 3.5rem;
+  width: 3.5rem;
+  border-radius: 9999px;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-border);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent-soft) 45%, transparent);
+}
+
+.impact-table-shell {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  overflow: auto;
+  border: 1px solid var(--table-border);
+  border-radius: 0.85rem;
+  background: var(--table-bg);
+  color: var(--text-main);
+}
+
+.impact-result-table {
+  min-width: 1500px;
+  width: max-content;
+  /* MUST be `separate` (not `collapse`): Chromium ignores `position: sticky` on
+     <th>/<td> in collapsed-border tables, which silently disabled the sticky
+     header and the frozen first columns. border-spacing:0 keeps the cells flush;
+     row/column separation is drawn by each cell's own border-bottom below. */
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.impact-result-table th,
+.impact-result-table td {
+  border-bottom: 1px solid var(--table-border);
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+  color: var(--text-main);
+}
+
+.impact-result-table th {
+  position: sticky;
+  top: 0;
+  /* Layered stacking (see frozen columns below): data cols = 10, standard
+     headers = 20, intersection headers = 30. */
+  z-index: 20;
+  background: var(--table-head-bg);
+  color: var(--muted-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: left;
+}
+
+.impact-result-table th:first-child,
+.impact-result-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--table-head-bg);
+}
+/* Intersection header (col 1): BOTH axes sticky + a stacking layer above the
+   frozen data column (z-30 > z-10), so on vertical scroll the data rows can
+   never ride up over the header label. */
+.impact-result-table th:first-child {
+  top: 0;
+  z-index: 30;
+}
+.impact-result-table td:first-child {
+  z-index: 10;
+  background: var(--table-bg);
+  font-weight: 700;
+}
+.impact-result-table th:nth-child(2),
+.impact-result-table td:nth-child(2) {
+  position: sticky;
+  left: 64px;
+  background: var(--table-head-bg);
+}
+/* Intersection header (col 2): same dual-axis + top stacking as col 1. */
+.impact-result-table th:nth-child(2) {
+  top: 0;
+  z-index: 30;
+}
+.impact-result-table td:nth-child(2) {
+  z-index: 10;
+  background: var(--table-bg);
+}
+
+/* Indirect / risked boundary impacts: only 4 columns. Size it to the container
+   instead of the 1500px matrix width (which left a large empty gutter on the
+   right) and disable the 2-column sticky offset — that offset is tuned for a
+   narrow leading "#" column and misaligns under the wide Service ID column here.
+   The table now fits without horizontal scroll, so Service ID / Path stay
+   visible without sticky positioning. */
+.impact-result-table--boundary {
+  min-width: 0;
+  width: 100%;
+}
+/* The boundary table fits horizontally, so it needs no LEFT freeze (which would
+   misalign under its wide Service ID column). We drop only the horizontal offset
+   (left: auto) but KEEP the base position: sticky + top: 0 on the headers, so the
+   header row — including columns 1 and 2 — still locks to the top when scrolling
+   down through many indirect paths. */
+.impact-result-table--boundary th:first-child,
+.impact-result-table--boundary td:first-child,
+.impact-result-table--boundary th:nth-child(2),
+.impact-result-table--boundary td:nth-child(2) {
+  left: auto;
+}
+
+/* Active service-carrying fiber links: keep horizontal scrolling, but pin the
+   leading "#" column to a fixed width so the frozen Service ID column (column 2)
+   sits flush against it with no gap or overlap when scrolled. */
+.impact-result-table--links {
+  min-width: 1100px;
+}
+.impact-result-table--links th:first-child,
+.impact-result-table--links td:first-child {
+  width: 60px;
+  min-width: 60px;
+}
+.impact-result-table--links th:nth-child(2),
+.impact-result-table--links td:nth-child(2) {
+  left: 60px;
+}
+
+.impact-result-table tbody tr:nth-child(even) td {
+  background-color: var(--table-row-stripe);
+}
+.impact-result-table tbody tr:hover td {
+  background-color: var(--table-row-hover);
+}
+
+/* Frozen columns must stay FULLY OPAQUE, otherwise the cells scrolling beneath
+   them show through. The zebra-stripe / hover backgrounds are semi-transparent
+   overlays, so on the sticky first/second columns we paint them over a solid
+   table background (solid color + the overlay drawn via background-image). */
+.impact-result-table tbody tr:nth-child(even) td:first-child,
+.impact-result-table tbody tr:nth-child(even) td:nth-child(2) {
+  background-color: var(--table-bg);
+  background-image: linear-gradient(var(--table-row-stripe), var(--table-row-stripe));
+}
+.impact-result-table tbody tr:hover td:first-child,
+.impact-result-table tbody tr:hover td:nth-child(2) {
+  background-color: var(--table-bg);
+  background-image: linear-gradient(var(--table-row-hover), var(--table-row-hover));
+}
+
+.impact-boundary-card {
+  border: 1px solid var(--table-border);
+  border-radius: 0.85rem;
+  background: rgba(251, 191, 36, 0.10);
+  padding: 0.9rem 1rem;
+}
+.impact-boundary-label {
+  color: var(--muted-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.impact-boundary-value {
+  margin-top: 0.35rem;
+  color: var(--text-strong);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.impact-path-card {
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  border-radius: 1rem;
+  background: rgba(245, 158, 11, 0.07);
+  padding: 1rem;
+}
+.impact-path-line {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+.impact-path-hop {
+  display: grid;
+  grid-template-columns: minmax(92px, auto) minmax(150px, 1fr) minmax(92px, auto);
+  align-items: center;
+  min-width: 360px;
+}
+.impact-path-node {
+  border: 1px solid rgba(2, 132, 199, 0.36);
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.10);
+  color: var(--text-strong);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+.impact-path-segment {
+  position: relative;
+  min-height: 3.15rem;
+  display: grid;
+  place-items: center;
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+.impact-path-segment::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.9), rgba(239, 68, 68, 0.8));
+}
+.impact-path-segment span,
+.impact-path-segment small {
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--table-border);
+  border-radius: 0.6rem;
+  background: var(--surface);
+  padding: 0.2rem 0.45rem;
+}
+.impact-path-segment small {
+  margin-top: 0.25rem;
+  display: block;
+  color: var(--muted-text);
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------------------
+   15. Segment split + operations panels
+---------------------------------------------------------------------------- */
+.segment-operation-panel {
+  position: relative;
+  overflow: visible;
+  border: 1px solid var(--border) !important;
+  border-left: 4px solid var(--accent) !important;
+  border-radius: 0.85rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.split-editor-panel {
+  position: relative;
+  border: 1px solid var(--border) !important;
+  border-left: 4px solid #0891b2 !important;
+  border-radius: 0.85rem;
+  background: var(--surface-2);
+  color: var(--text-main);
+  box-shadow: var(--shadow-soft);
+}
+
+.split-form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: start;
+}
+
+.split-form-grid label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.35rem;
+  white-space: normal !important;
+  line-height: 1.35;
+}
+
+.split-form-grid .input-dark,
+.split-form-grid input,
+.split-form-grid select {
+  width: 100%;
+  min-width: 0;
+}
+
+.split-preview-card {
+  min-height: 5.25rem;
+}
+
+.child-detail-row .child-table-shell,
+.child-detail-row .split-editor-panel {
+  max-width: min(100%, calc(100vw - 6rem));
+}
+
+/* Child ODF port-link rows currently selected for a split operation */
+.split-selected-child-row > td {
+  background: rgba(8, 145, 178, 0.08) !important;
+  border-top: 2px solid #0891b2 !important;
+  border-bottom: 2px solid #0891b2 !important;
+  color: var(--text-strong) !important;
+  font-weight: 600;
+}
+.split-selected-child-row > td:first-child {
+  border-left: 2px solid #0891b2 !important;
+}
+.split-selected-child-row > td:last-child {
+  border-right: 2px solid #0891b2 !important;
+}
+html[data-theme="dark"] .split-selected-child-row > td {
+  background: rgba(8, 145, 178, 0.20) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   16. Trace + topology visuals
+---------------------------------------------------------------------------- */
+.trace-chain-strip {
+  border: 1px solid var(--accent-soft-border);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-radius: 0.85rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.trace-service-table-shell {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid var(--table-border);
+  border-radius: 0.85rem;
+  background: var(--table-bg);
+}
+
+.trace-service-table {
+  width: 100%;
+  min-width: 1180px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.trace-service-table th,
+.trace-service-table td {
+  border-right: 1px solid var(--table-border);
+  border-bottom: 1px solid var(--table-border);
+  padding: 0.75rem 0.85rem;
+  text-align: left;
+  vertical-align: top;
+  color: var(--text-main);
+}
+
+.trace-service-table th {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: var(--table-head-bg);
+  color: var(--muted-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.trace-service-table tbody tr:nth-child(even) td {
+  background: var(--table-row-stripe);
+}
+
+.trace-service-table tbody tr:hover td {
+  background: var(--table-row-hover);
+}
+
+.trace-service-table th:last-child,
+.trace-service-table td:last-child {
+  border-right: 0;
+}
+
+.topology-group-divider-row td {
+  background: var(--surface-3);
+  border-top: 1px solid var(--table-border);
+  padding: 0.4rem 0.6rem;
+}
+
+.topology-attachment-card {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 1rem;
+  padding: 16px;
+}
+
+/* Topology chain (node → edge → node strip) */
+.service-topology-line {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 1.1rem 0.25rem;
+  scrollbar-width: thin;
+}
+
+.service-topology-node {
+  flex: 0 0 auto;
+  border-radius: 12px;
+  /* Light Mode: solid dark fill + white text so node codes are high-contrast and
+     scannable (previously a near-transparent tint with faint text). Dark theme is
+     restored by the override below. */
+  border: 1.5px solid #0b4a72;
+  background: #0e4a6e;
+  color: #ffffff;
+  padding: 0.5rem 0.85rem;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  position: relative;
+  transition: box-shadow 0.15s ease, transform 0.12s ease;
+  cursor: default;
+  white-space: nowrap;
+}
+.service-topology-node:hover {
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.18);
+  transform: translateY(-1px);
+}
+html[data-theme="dark"] .service-topology-node {
+  border-color: rgba(56, 189, 248, 0.40);
+  background: rgba(14, 165, 233, 0.14);
+  color: #a8e0fb;
+}
+
+/* Site SVG icon node — replaces the plain box in the non-A-MPLS trace chains.
+   Icon on top, site name beneath, no boxed background. Slots into the same
+   .service-topology-line flex flow so the chain layout is unchanged. */
+.topology-site-node {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  position: relative;
+  cursor: default;
+}
+.topology-site-node-editable { cursor: pointer; }
+.topology-site-node-busy { opacity: 0.5; }
+.topology-site-node-icon-wrap { position: relative; display: block; line-height: 0; }
+.topology-site-node-icon {
+  width: 4.25rem;
+  height: 5rem;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.12s ease;
+  filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.18));
+}
+.topology-site-node-editable:hover .topology-site-node-icon { transform: translateY(-2px); }
+/* Jumper-toggled sites swap to the Jumper.svg artwork. The box keeps the shared
+   5rem height (chain baseline unchanged) but the narrower width scales the
+   artwork well below the 4.25rem-wide telecom tower — the tower must ALWAYS
+   read bigger than a jumper. PE artwork (MPLS core chains) sits between. */
+.topology-site-node-icon-jumper { width: 3.25rem; }
+.topology-site-node-icon-pe { width: 5rem; }
+.topology-site-node-label {
+  max-width: 7rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html[data-theme="dark"] .topology-site-node-label { color: #e2e8f0; }
+.topology-site-node-badge {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.55rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #dc2626;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 1px 3px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+}
+.topology-site-node-badge-junction { color: #b45309; right: auto; left: -0.55rem; }
+
+.service-topology-edge {
+  position: relative;
+  height: 2px;
+  min-width: 3.5rem;
+  flex: 0 0 3.5rem;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.55) 0%, rgba(248, 113, 113, 0.85) 50%, rgba(239, 68, 68, 0.55) 100%);
+  opacity: 0.9;
+}
+
+.service-topology-edge::after {
+  content: "";
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid rgba(248, 113, 113, 0.85);
+}
+
+.service-topology-edge > span {
+  position: absolute;
+  left: 50%;
+  top: -1.3rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--muted-text);
+  background: var(--surface);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.topology-node-junction {
+  border-color: #b45309 !important;
+  background: #9a4b06 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.30) !important;
+}
+html[data-theme="dark"] .topology-node-junction {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #fcd28a !important;
+}
+
+/* Passive jumper node — rendered as a distinct ROUND/pill node with a solid
+   indigo accent + cross-connect glyph, so it is unmistakably isolated from the
+   square (12px-radius) terminal facility nodes around it. */
+.topology-node-jumper {
+  border-radius: 9999px !important;
+  border-color: #4f46e5 !important;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22), 0 4px 12px rgba(79, 70, 229, 0.28) !important;
+  border-style: solid !important;
+  padding-left: 0.95rem !important;
+  padding-right: 0.95rem !important;
+}
+html[data-theme="dark"] .topology-node-jumper {
+  color: #ffffff !important;
+}
+.topology-node-jumper .topology-jumper-icon {
+  color: #e0e7ff;
+}
+.topology-jumper-icon {
+  margin-right: 0.3rem;
+  font-weight: 700;
+  color: #6366f1;
+}
+html[data-theme="dark"] .topology-jumper-icon {
+  color: #a5b4fc;
+}
+
+/* Interactive (retroactively markable) node affordance. */
+.topology-node-editable {
+  cursor: pointer;
+}
+.topology-node-editable:hover {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.45), 0 6px 18px rgba(79, 70, 229, 0.22) !important;
+  transform: translateY(-1px);
+}
+.topology-node-editable:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+.topology-node-busy {
+  opacity: 0.55;
+  cursor: progress;
+  pointer-events: none;
+}
+
+.service-topology-edge-closing {
+  background: transparent !important;
+  border-top: 2px dashed rgba(16, 185, 129, 0.65);
+  height: 0;
+  opacity: 0.9;
+}
+.service-topology-edge-closing::after {
+  display: none;
+}
+.service-topology-edge-closing > span {
+  color: #047857;
+}
+html[data-theme="dark"] .service-topology-edge-closing > span {
+  color: #79e6bc;
+}
+
+.topology-node-ring-return {
+  border-color: #065f46 !important;
+  background: #06694a !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .topology-node-ring-return {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #79e6bc !important;
+}
+
+.service-topology-line.topology-single-homed .service-topology-node {
+  border-color: #065f46 !important;
+  background: #065f46 !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .service-topology-line.topology-single-homed .service-topology-node {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #79e6bc !important;
+}
+.service-topology-line.topology-single-homed .service-topology-edge {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.5) 0%, rgba(52, 211, 153, 0.8) 50%, rgba(16, 185, 129, 0.5) 100%) !important;
+}
+.service-topology-line.topology-single-homed .service-topology-edge::after {
+  border-left-color: rgba(52, 211, 153, 0.8) !important;
+}
+
+/* Trace stat cards (flat, fast surfaces — no per-card blur) */
+.trace-stat-card {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: var(--shadow-soft);
+}
+.trace-stat-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+}
+.trace-stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-strong);
+  line-height: 1.1;
+}
+.trace-stat-sub {
+  font-size: 0.72rem;
+  color: var(--muted-text);
+  margin-top: 0.1rem;
+}
+
+/* React Flow graph chrome */
+.site-topology-shell {
+  min-height: 560px;
+}
+
+.site-topology-shell .react-flow__node {
+  text-shadow: none !important;
+}
+
+.site-topology-shell .react-flow__edge-text,
+.site-topology-shell .react-flow__edge-textbg {
+  display: none !important;
+}
+
+.site-topology-shell .react-flow__controls {
+  box-shadow: var(--shadow-soft);
+}
+
+.react-flow__controls button {
+  background: var(--surface) !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   18. Executive telecom dashboard (reference-layout overhaul)
+---------------------------------------------------------------------------- */
+:root {
+  --gauge-critical: #dc2626;
+  --gauge-high: #ea580c;
+  --gauge-moderate: #ca8a04;
+  --gauge-normal: #059669;
+  --gauge-sky: #0ea5e9;
+  --gauge-violet: #8b5cf6;
+}
+
+/* Tier A — dense KPI cards */
+.kpi-card-dense {
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--surface);
+  padding: 0.95rem 1.05rem;
+  box-shadow: var(--shadow-soft);
+}
+.kpi-card-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+  line-height: 1.2;
+}
+.kpi-card-value {
+  margin-top: 0.35rem;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+}
+.kpi-value-critical { color: #dc2626; }
+.kpi-value-high { color: #ea580c; }
+.kpi-value-moderate { color: #ca8a04; }
+.kpi-value-normal { color: #059669; }
+.kpi-icon-sky { color: #0ea5e9; }
+.kpi-icon-emerald { color: #059669; }
+.kpi-icon-amber { color: #d97706; }
+.kpi-icon-rose { color: #e11d48; }
+.kpi-icon-violet { color: #8b5cf6; }
+.kpi-icon-critical { color: #dc2626; }
+.kpi-icon-high { color: #ea580c; }
+.kpi-icon-moderate { color: #ca8a04; }
+.kpi-icon-normal { color: #059669; }
+.kpi-card-target,
+.kpi-card-sub {
+  font-size: 0.72rem;
+  color: var(--muted-text);
+  margin-top: 0.2rem;
+}
+.kpi-meter {
+  margin-top: 0.45rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  overflow: hidden;
+}
+.kpi-meter-fill { display: block; height: 100%; border-radius: 999px; }
+.kpi-fill-sky { background: #0ea5e9; }
+.kpi-fill-emerald { background: #059669; }
+.kpi-fill-amber { background: #d97706; }
+.kpi-fill-rose { background: #e11d48; }
+.kpi-fill-violet { background: #8b5cf6; }
+.kpi-fill-critical { background: #dc2626; }
+.kpi-fill-high { background: #ea580c; }
+.kpi-fill-moderate { background: #ca8a04; }
+.kpi-fill-normal { background: #059669; }
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.kpi-trend-up { color: #059669; }
+.kpi-trend-down { color: #dc2626; }
+.kpi-trend-flat { color: var(--muted-text); }
+
+/* Tier B — radial gauges */
+.gauge-block { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+.gauge-svg { width: 100%; max-width: 130px; height: auto; }
+.gauge-track { stroke: rgba(71, 85, 105, 0.36); }
+.gauge-value { font-size: 1.6rem; font-weight: 800; fill: var(--text-strong); }
+.gauge-label { font-size: 0.78rem; font-weight: 700; color: var(--text-strong); }
+.gauge-caption { font-size: 0.68rem; color: var(--muted-text); }
+html[data-theme="dark"] .gauge-track { stroke: rgba(226, 232, 240, 0.30); }
+html[data-theme="dark"] .gauge-label { color: var(--text-strong); }
+html[data-theme="dark"] .gauge-caption { color: #cbd5e1; }
+
+/* Tier B — allocation stacked bars */
+.alloc-chart { display: flex; flex-direction: column; gap: 0.6rem; }
+.alloc-bars { display: flex; align-items: flex-end; gap: 0.5rem; height: 180px; }
+.alloc-col { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; flex: 1 1 0; min-width: 26px; height: 100%; }
+.alloc-stack { display: flex; flex-direction: column-reverse; justify-content: flex-start; width: 100%; height: 100%; border-radius: 0.95rem; overflow: hidden; background: rgba(148, 163, 184, 0.12); }
+.alloc-seg { display: block; width: 100%; }
+.alloc-used { background: #0ea5e9; }
+.alloc-reserved { background: #f59e0b; }
+.alloc-available { background: #48e14b; }
+.alloc-col-label { font-size: 0.66rem; font-weight: 600; color: var(--muted-text); text-align: center; }
+.alloc-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.72rem; color: var(--muted-text); }
+.alloc-dot { display: inline-block; height: 0.6rem; width: 0.6rem; border-radius: 2px; margin-right: 0.3rem; vertical-align: middle; }
+
+/* Engine topology — network layout metric tiles */
+.net-layout-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--nlt-rgb) 35%, transparent);
+  background: color-mix(in srgb, var(--nlt-rgb) 10%, var(--surface));
+  padding: 0.85rem 0.95rem;
+  overflow: hidden;
+}
+.net-layout-icon { height: 1.05rem; width: 1.05rem; color: rgb(var(--nlt-rgb)); }
+.net-layout-value { font-size: 1.65rem; font-weight: 800; line-height: 1.1; color: var(--text-main); font-variant-numeric: tabular-nums; }
+.net-layout-label { font-size: 0.72rem; font-weight: 700; color: var(--text-main); }
+.net-layout-caption { font-size: 0.66rem; color: var(--muted-text); }
+.net-layout-amber { --nlt-rgb: 245 158 11; }
+.net-layout-orange { --nlt-rgb: 249 115 22; }
+.net-layout-sky { --nlt-rgb: 14 165 233; }
+.net-layout-violet { --nlt-rgb: 139 92 246; }
+.net-layout-emerald { --nlt-rgb: 16 185 129; }
+
+/* Tier C — provisioning flow */
+.flow-stages { display: flex; flex-direction: column; gap: 0.35rem; }
+.flow-stage { display: flex; flex-direction: column; gap: 0.25rem; }
+.flow-stage-head { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; color: var(--text-main); }
+.flow-stage-count { font-variant-numeric: tabular-nums; font-weight: 800; }
+.flow-stage-bar { height: 0.7rem; border-radius: 999px; background: rgba(148, 163, 184, 0.2); overflow: hidden; }
+.flow-fill { display: block; height: 100%; border-radius: 999px; }
+.flow-fill-neutral { background: #64748b; }
+.flow-fill-ready { background: #0ea5e9; }
+.flow-fill-warning { background: #f59e0b; }
+.flow-fill-committed { background: #059669; }
+.flow-fill-critical { background: #dc2626; }
+.flow-arrow { text-align: center; color: var(--muted-text); font-size: 0.8rem; line-height: 0.6; }
+.flow-backlog { margin-top: 0.9rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 0.7rem; font-size: 0.8rem; font-weight: 600; color: var(--muted-text); }
+.flow-backlog-value { font-size: 1.05rem; font-weight: 800; color: #059669; }
+.flow-backlog-warn { color: #dc2626; }
+
+/* Tier C — exchange operational grid */
+.exch-grid-shell { max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: 0.7rem; }
+.exch-grid { width: 100%; border-collapse: collapse; }
+/* Header and body cells are center-aligned so each value sits directly under
+   its column title. */
+.exch-grid th, .exch-grid td { padding: 0.55rem 0.8rem; text-align: center; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+.exch-grid th { position: sticky; top: 0; background: var(--table-head-bg); color: var(--muted-text); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; z-index: 1; }
+.exch-grid th.num, .exch-grid td.num { text-align: center; font-variant-numeric: tabular-nums; }
+.exch-name { font-weight: 700; color: var(--text-strong); }
+.exch-site-id { display: inline-flex; min-width: 4.8rem; justify-content: center; border-radius: 0.38rem; background: rgba(14, 165, 233, 0.10); color: #075985; font-size: 0.72rem; font-weight: 850; letter-spacing: 0.04em; padding: 0.18rem 0.48rem; line-height: 1.2; white-space: nowrap; }
+html[data-theme="dark"] .exch-site-id { background: rgba(14, 165, 233, 0.16); color: #7dd3fc; }
+/* DC tag = red, Core tag = orange (per operator request). rgba tints keep both
+   legible in light and dark mode. */
+.exch-dc-badge { display: inline-flex; align-items: center; border-radius: 0.3rem; background: rgba(220, 38, 38, 0.16); color: #dc2626; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.04em; padding: 0.05rem 0.3rem; line-height: 1.2; }
+.exch-core-badge { display: inline-flex; align-items: center; border-radius: 0.3rem; background: rgba(234, 88, 12, 0.16); color: #ea580c; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.04em; padding: 0.05rem 0.3rem; line-height: 1.2; }
+/* Generic site tag/type badge (DWDM, PE, …) for the Site Tag/Type column —
+   neutral slate, rgba tint reads in both themes. */
+.exch-tag-badge { display: inline-flex; align-items: center; border-radius: 0.3rem; background: rgba(100, 116, 139, 0.18); color: #334155; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.04em; padding: 0.05rem 0.3rem; line-height: 1.2; }
+html[data-theme="dark"] .exch-tag-badge { color: #cbd5e1; }
+/* Site Tag/Type column: larger, more legible badges than the inline name-row tags. */
+.exch-tag-cell { justify-content: center; }
+.exch-tag-cell .exch-dc-badge,
+.exch-tag-cell .exch-core-badge,
+.exch-tag-cell .exch-tag-badge { font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 0.4rem; }
+/* Expanded operational grid: tall enough to show a full 20-site rotation batch
+   without scrolling. Applied alongside .exch-grid-shell, so it overrides the
+   default 320px max-height (same specificity, defined later = wins). */
+.exch-grid-shell-tall { max-height: 780px; }
+.exch-critical-dot { display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 999px; background: #dc2626; box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18); }
+.exch-risk { display: inline-block; min-width: 1.6rem; text-align: center; border-radius: 999px; background: rgba(220, 38, 38, 0.14); color: #b91c1c; font-weight: 800; padding: 0 0.4rem; }
+.exch-ok { color: var(--muted-text); }
+.exch-sat { font-weight: 800; }
+.exch-sat-critical { color: #dc2626; }
+.exch-sat-high { color: #ea580c; }
+.exch-sat-moderate { color: #ca8a04; }
+.exch-sat-normal { color: #059669; }
+.exch-variance-flat { color: var(--muted-text); }
+
+/* Core & DC Intra-Site ODF Saturation panel — reuses the .exch-grid table but
+   gives the Segment column a readable, wrapping, left-aligned cell so manually
+   edited segment names never clip outside the card. */
+.intra-grid-shell { max-height: 430px; overflow: auto; border: 1px solid var(--border); border-radius: 0.7rem; }
+.intra-grid { width: 100%; border-collapse: collapse; }
+.intra-grid th.intra-seg-head, .intra-grid td.intra-seg-name { text-align: left; }
+.intra-grid td.intra-seg-name { max-width: 230px; }
+.intra-seg-title { display: block; font-weight: 700; color: var(--text-strong); white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.25; }
+.intra-seg-parent { display: block; margin-top: 0.1rem; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.04em; color: var(--muted-text); }
+.odf-section-row td { position: sticky; top: 2.15rem; z-index: 1; background: var(--surface-3); color: var(--text-strong); text-align: left !important; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }

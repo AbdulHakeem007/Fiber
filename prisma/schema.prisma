@@ -1,0 +1,1423 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleCode {
+  ADMIN
+  READ_WRITE
+  READ_ONLY
+}
+
+/// Where a user's credentials are authenticated.
+enum LoginType {
+  LOCAL
+  LDAP
+}
+
+/// Global authentication strategy selectable by administrators.
+enum LoginMode {
+  LOCAL_ONLY
+  LDAP_ONLY
+  LOCAL_AND_LDAP
+}
+
+enum SiteStatus {
+  ACTIVE
+  PLANNED
+  INACTIVE
+  DECOMMISSIONED
+}
+
+enum OdfStatus {
+  ACTIVE
+  PLANNED
+  INACTIVE
+  DECOMMISSIONED
+}
+
+enum ResourceStatus {
+  ACTIVE
+  AVAILABLE
+  USED
+  SPARE
+  RESERVED
+  FAULTY
+  DUMMY
+  PLANNED
+  UNKNOWN
+  MAINTENANCE
+  INACTIVE
+  DECOMMISSIONED
+}
+
+enum PortGroupType {
+  SINGLE
+  PAIR
+  CUSTOM
+}
+
+enum EndpointSide {
+  A
+  B
+}
+
+enum ServiceStatus {
+  ACTIVE
+  PLANNED
+  SUSPENDED
+  PROTECTION
+  TEMPORARY
+  DECOMMISSIONED
+}
+
+enum RouteType {
+  WORKING
+  PROTECTION
+  TEMPORARY
+  RESTORATION
+}
+
+enum MetricType {
+  SEGMENT_UTILIZATION
+  SITE_PAIR_UTILIZATION
+  ODF_UTILIZATION
+  CABLE_UTILIZATION
+}
+
+enum AlertType {
+  HIGH_UTILIZATION
+  MISSING_FAR_END_MAPPING
+  MISSING_CABLE_INFORMATION
+  PARTIAL_TERMINATION
+  IMPORT_WARNING
+  DATA_GAP
+  DUPLICATE_MAPPING
+  FAULTY_FIBER_COUNT
+  CUTOVER_RISK
+  SINGLE_POINT_OF_FAILURE
+  SPUR_ENDPOINT_RISK
+  CUSTOM
+}
+
+enum AlertSeverity {
+  WARNING
+  CRITICAL
+}
+
+enum AlertState {
+  OPEN
+  ACKNOWLEDGED
+  SUPPRESSED
+  CLEARED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  MOBILE_PUSH
+  IN_APP
+  NONE
+}
+
+enum ImportBatchStatus {
+  UPLOADED
+  VALIDATED
+  REVIEW_REQUIRED
+  COMMITTED
+  PARTIAL_FAILED
+  FAILED
+}
+
+enum ImportRowStatus {
+  STAGED
+  VALID
+  WARNING
+  ERROR
+  APPROVED
+  REJECTED
+  COMMITTED
+  SKIPPED
+}
+
+enum IssueSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum ChangeAction {
+  CREATE
+  UPDATE
+  DELETE
+  IMPORT
+  EXPORT
+  RESERVE
+  RELEASE
+  ACKNOWLEDGE
+  SUPPRESS
+  CLEAR
+  PASSWORD_RESET
+  PASSWORD_CHANGE
+  SMTP_UPDATE
+  TEMPLATE_UPDATE
+  ROLE_CHANGE
+  MANUAL_OVERRIDE
+  LOGIN
+}
+
+enum RecordSource {
+  IMPORT
+  MANUAL
+  API
+  SYSTEM
+}
+
+enum SplitterScope {
+  ISP
+  OSP
+}
+
+enum SplitterProtection {
+  PROTECTED
+  UNPROTECTED
+  UNKNOWN
+}
+
+model Role {
+  id              String           @id @default(cuid())
+  code            RoleCode         @unique
+  name            String
+  description     String?
+  permissionsJson String?
+  users           User[]
+  roleUsers       UserRole[]
+  rolePermissions RolePermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  name                String
+  /// LOCAL users keep a portal-managed scrypt hash; LDAP users have none and
+  /// authenticate against the domain controller.
+  loginType           LoginType            @default(LOCAL)
+  passwordHash        String?
+  passwordChangedAt   DateTime?
+  forcePasswordChange Boolean              @default(false)
+  // Account-lockout state. ADMIN / READ_WRITE local accounts lock after too many
+  // failed logins; the lock is cleared only by entering the emailed unlock code
+  // (or by an admin via the Users screen). LDAP users and the emergency account
+  // are never locked here.
+  failedLoginAttempts Int                  @default(0)
+  lockedAt            DateTime?
+  unlockCodeHash      String?
+  unlockCodeExpiresAt DateTime?
+  unlockCodeAttempts  Int                  @default(0)
+  roleId              String
+  isActive            Boolean              @default(true)
+  lastLoginAt         DateTime?
+  role                Role                 @relation(fields: [roleId], references: [id])
+  roleLinks           UserRole[]
+  temporaryPasswords  TemporaryPassword[]
+  passwordResetTokens PasswordResetToken[]
+  uploadedBatches     ImportBatch[]        @relation("ImportUploadedBy")
+  reviewedBatches     ImportBatch[]        @relation("ImportReviewedBy")
+  committedBatches    ImportBatch[]        @relation("ImportCommittedBy")
+  createdSuppressions AlertSuppression[]   @relation("AlertSuppressionCreatedBy")
+  acknowledgedAlerts  AlertEvent[]         @relation("AlertAcknowledgedBy")
+  resolvedIssues      ImportIssue[]        @relation("ImportIssueResolvedBy")
+  notificationLogs    NotificationLog[]    @relation("NotificationLogUser")
+  auditLogs           AuditLog[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+/// Singleton (single active row) authentication configuration. Stores the
+/// global Login Mode, the LDAP / Domain Controller connection, and the
+/// emergency local fallback account used when the directory is unreachable.
+model AuthSetting {
+  id                      String    @id @default(cuid())
+  loginMode               LoginMode @default(LOCAL_ONLY)
+  ldapEnabled             Boolean   @default(false)
+  ldapHost                String?
+  ldapPort                Int?
+  ldapUseSsl              Boolean   @default(true)
+  ldapBaseDn              String?
+  ldapBindDn              String?
+  ldapBindPasswordEnc     String?
+  ldapUserDnPattern       String?
+  ldapUserAttribute       String?   @default("sAMAccountName")
+  // Optional allow-list of domain usernames permitted to log in via LDAP
+  // (comma/newline separated). Empty = no restriction beyond per-user records.
+  ldapAllowedUsernames    String?
+  emergencyAccountEnabled Boolean   @default(true)
+  emergencyUsername       String    @default("portal.superadmin")
+  emergencyAllowedIps     String?
+  isActive                Boolean   @default(true)
+  updatedById             String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  module          String
+  description     String?
+  rolePermissions RolePermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  isPrimary Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model TemporaryPassword {
+  id           String    @id @default(cuid())
+  userId       String
+  passwordHash String
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  reason       String?
+  user         User      @relation(fields: [userId], references: [id])
+  createdAt    DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model Site {
+  id                     String                      @id @default(cuid())
+  code                   String                      @unique
+  name                   String?
+  region                 String?
+  city                   String?
+  siteType               String?
+  label                  String?
+  siteStructure          String?
+  colocationType         String?
+  colocationOwner        String?
+  coordinateX            Float?
+  coordinateY            Float?
+  isFiberNode            Boolean                     @default(false)
+  isCoreSite             Boolean                     @default(false)
+  coreSiteType           String?
+  // Operator-managed flags previously added at runtime via raw SQL; now schema-managed.
+  isCriticalSite         Boolean                     @default(false)
+  isDatacenter           Boolean                     @default(false)
+  status                 SiteStatus                  @default(ACTIVE)
+  remarks                String?
+  aliases                SiteAlias[]
+  criticalityTags        SiteCriticalityAssignment[]
+  racks                  Rack[]
+  odfs                   ODF[]
+  portGroups             PortGroup[]
+  segmentEndpoints       SegmentEndpoint[]
+  serviceRouteHops       ServiceRouteHop[]
+  serviceAllocationsFrom ServiceAllocation[]         @relation("ServiceAllocationFromSite")
+  serviceAllocationsTo   ServiceAllocation[]         @relation("ServiceAllocationToSite")
+  utilizationMetrics     UtilizationMetric[]         @relation("SiteUtilizationMetric")
+  alertEvents            AlertEvent[]                @relation("SiteAlertEvent")
+  attachments            SegmentAttachment[]
+  cableSiteA             Cable[]                     @relation("CableSiteA")
+  cableSiteB             Cable[]                     @relation("CableSiteB")
+  normalizedRowsA        ImportStagingRow[]          @relation("StagingNormalizedSiteA")
+  normalizedRowsB        ImportStagingRow[]          @relation("StagingNormalizedSiteB")
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+
+  @@index([region])
+  @@index([siteType])
+  @@index([label])
+  @@index([colocationType])
+  @@index([isFiberNode])
+  @@index([isCoreSite])
+  @@index([coreSiteType])
+  @@index([isCriticalSite])
+  @@index([isDatacenter])
+  @@index([status])
+}
+
+model SiteAlias {
+  id              String       @id @default(cuid())
+  siteId          String
+  alias           String
+  aliasNormalized String
+  isPrimary       Boolean      @default(false)
+  source          RecordSource @default(MANUAL)
+  site            Site         @relation(fields: [siteId], references: [id])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([siteId, aliasNormalized])
+  @@unique([aliasNormalized])
+}
+
+model SiteCriticalityTag {
+  id          String                      @id @default(cuid())
+  code        String                      @unique
+  label       String
+  assignments SiteCriticalityAssignment[]
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+}
+
+model SiteCriticalityAssignment {
+  id        String             @id @default(cuid())
+  siteId    String
+  tagId     String
+  site      Site               @relation(fields: [siteId], references: [id])
+  tag       SiteCriticalityTag @relation(fields: [tagId], references: [id])
+  createdAt DateTime           @default(now())
+
+  @@unique([siteId, tagId])
+  @@index([tagId])
+}
+
+model Rack {
+  id               String            @id @default(cuid())
+  siteId           String
+  rackCode         String
+  name             String?
+  status           OdfStatus         @default(ACTIVE)
+  remarks          String?
+  site             Site              @relation(fields: [siteId], references: [id])
+  odfs             ODF[]
+  portGroups       PortGroup[]
+  segmentEndpoints SegmentEndpoint[]
+  serviceRouteHops ServiceRouteHop[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([siteId, rackCode])
+  @@index([siteId])
+}
+
+model ODF {
+  id                 String              @id @default(cuid())
+  siteId             String
+  rackId             String
+  odfCode            String
+  name               String?
+  status             OdfStatus           @default(ACTIVE)
+  maxPorts           Int?
+  remarks            String?
+  site               Site                @relation(fields: [siteId], references: [id])
+  rack               Rack                @relation(fields: [rackId], references: [id])
+  ports              ODFPort[]
+  portGroups         PortGroup[]
+  segmentEndpoints   SegmentEndpoint[]
+  serviceRouteHops   ServiceRouteHop[]
+  utilizationMetrics UtilizationMetric[] @relation("OdfUtilizationMetric")
+  alertEvents        AlertEvent[]        @relation("OdfAlertEvent")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@unique([siteId, rackId, odfCode])
+  @@index([siteId, odfCode])
+  @@index([siteId, status])
+  @@index([rackId, status])
+  @@index([rackId])
+}
+
+model ODFPort {
+  id              String            @id @default(cuid())
+  odfId           String
+  portNumber      Int
+  label           String?
+  fiberPortNumber Int?
+  tubeNumber      Int?
+  tubeColor       String?
+  fiberNumber     Int?
+  status          ResourceStatus    @default(AVAILABLE)
+  isBlocked       Boolean           @default(false)
+  remarks         String?
+  odf             ODF               @relation(fields: [odfId], references: [id])
+  groupMembers    PortGroupMember[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([odfId, portNumber])
+  @@index([status])
+  @@index([odfId, status])
+  @@index([fiberPortNumber])
+  @@index([tubeNumber])
+  @@index([fiberNumber])
+}
+
+model PortGroup {
+  id                     String                   @id @default(cuid())
+  siteId                 String
+  rackId                 String
+  odfId                  String
+  groupType              PortGroupType
+  displayLabel           String
+  startPortNumber        Int?
+  endPortNumber          Int?
+  fiberPortNumber        Int?
+  fiberNumber            Int?
+  tubeNumber             Int?
+  tubeColor              String?
+  status                 ResourceStatus           @default(AVAILABLE)
+  reservationNote        String?
+  remarks                String?
+  source                 RecordSource             @default(MANUAL)
+  site                   Site                     @relation(fields: [siteId], references: [id])
+  rack                   Rack                     @relation(fields: [rackId], references: [id])
+  odf                    ODF                      @relation(fields: [odfId], references: [id])
+  members                PortGroupMember[]
+  segmentEndpoints       SegmentEndpoint[]
+  serviceRouteHops       ServiceRouteHop[]
+  serviceAllocationsAsA  ServiceAllocation[]      @relation("ServiceAllocationEndpointAPortGroup")
+  serviceAllocationsAsB  ServiceAllocation[]      @relation("ServiceAllocationEndpointBPortGroup")
+  splitterOutputs        SplitterOutput[]
+  segmentMappingsAsLocal SegmentEndpointMapping[] @relation("SegmentEndpointMappingLocalPortGroup")
+  segmentMappingsAsFar   SegmentEndpointMapping[] @relation("SegmentEndpointMappingFarPortGroup")
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+
+  @@unique([odfId, displayLabel])
+  @@index([siteId])
+  @@index([rackId])
+  @@index([status])
+  @@index([odfId, status])
+  @@index([fiberPortNumber])
+  @@index([fiberNumber])
+  @@index([tubeNumber])
+}
+
+model PortGroupMember {
+  id          String    @id @default(cuid())
+  portGroupId String
+  odfPortId   String
+  sequence    Int
+  portGroup   PortGroup @relation(fields: [portGroupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  odfPort     ODFPort   @relation(fields: [odfPortId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([portGroupId, odfPortId])
+  @@unique([portGroupId, sequence])
+  @@index([odfPortId])
+}
+
+model Cable {
+  id                 String              @id @default(cuid())
+  cableCode          String?
+  cableName          String?
+  cableType          String?
+  totalFibers        Int?
+  routeLabel         String?
+  distanceKm         Float?
+  siteAId            String?
+  siteBId            String?
+  status             ResourceStatus      @default(ACTIVE)
+  remarks            String?
+  siteA              Site?               @relation("CableSiteA", fields: [siteAId], references: [id])
+  siteB              Site?               @relation("CableSiteB", fields: [siteBId], references: [id])
+  linkSegments       LinkSegment[]
+  utilizationMetrics UtilizationMetric[] @relation("CableUtilizationMetric")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([cableCode])
+  @@index([siteAId, siteBId])
+  @@index([status])
+}
+
+model SegmentEndpoint {
+  id                    String              @id @default(cuid())
+  endpointSide          EndpointSide
+  siteId                String?
+  rackId                String?
+  odfId                 String?
+  portGroupId           String?
+  rawSiteCode           String?
+  rawRackCode           String?
+  rawOdfCode            String?
+  rawPortText           String?
+  displayPortText       String?
+  terminationStatus     ResourceStatus      @default(ACTIVE)
+  remarks               String?
+  site                  Site?               @relation(fields: [siteId], references: [id])
+  rack                  Rack?               @relation(fields: [rackId], references: [id])
+  odf                   ODF?                @relation(fields: [odfId], references: [id])
+  portGroup             PortGroup?          @relation(fields: [portGroupId], references: [id])
+  segmentAsA            LinkSegment?        @relation("LinkSegmentEndpointA")
+  segmentAsB            LinkSegment?        @relation("LinkSegmentEndpointB")
+  serviceAllocationsAsA ServiceAllocation[] @relation("ServiceAllocationEndpointA")
+  serviceAllocationsAsB ServiceAllocation[] @relation("ServiceAllocationEndpointB")
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([siteId])
+  @@index([rackId])
+  @@index([odfId])
+  @@index([portGroupId])
+  @@index([rawSiteCode])
+}
+
+model LinkSegment {
+  id                    String                   @id @default(cuid())
+  segmentCode           String                   @unique
+  segmentGroupName      String?
+  segmentSequence       String?
+  segmentCapacityFibers Int?
+  sourceSegmentKey      String?
+  sourceWorkbook        String?
+  sourceWorksheetName   String?
+  spanType              String?
+  inventoryClass        String?
+  matchStatus           String?
+  sitePairKey           String
+  endpointAId           String                   @unique
+  endpointBId           String                   @unique
+  cableId               String?
+  routeLabel            String?
+  tubeNumber            Int?
+  tubeColor             String?
+  tubeLabel             String?
+  fiberPortNumber       Int?
+  fiberNumber           Int?
+  fiberLabel            String?
+  fiberCount            Int?
+  totalFiberCapacity    Int                      @default(0)
+  usableFiberCapacity   Int?
+  usedFiberCount        Int                      @default(0)
+  reservedFiberCount    Int                      @default(0)
+  faultyFiberCount      Int                      @default(0)
+  inactiveFiberCount    Int                      @default(0)
+  dummyFiberCount       Int                      @default(0)
+  availableFiberCount   Int                      @default(0)
+  utilizationPct        Float                    @default(0)
+  terminatedPairCount   Int?
+  distanceKm            Float?
+  status                ResourceStatus           @default(ACTIVE)
+  isPartialTermination  Boolean                  @default(false)
+  isMirrorCandidate     Boolean                  @default(false)
+  manualOverride        Boolean                  @default(false)
+  overrideReason        String?
+  comments              String?
+  allocatedServiceCode  String?
+  allocationNote        String?
+  segmentDefaultRole    String?
+  installedAt           DateTime?
+  decommissionedAt      DateTime?
+  source                RecordSource             @default(IMPORT)
+  importBatchId         String?
+  endpointA             SegmentEndpoint          @relation("LinkSegmentEndpointA", fields: [endpointAId], references: [id])
+  endpointB             SegmentEndpoint          @relation("LinkSegmentEndpointB", fields: [endpointBId], references: [id])
+  cable                 Cable?                   @relation(fields: [cableId], references: [id])
+  importBatch           ImportBatch?             @relation(fields: [importBatchId], references: [id])
+  fibers                SegmentFiber[]
+  endpointMappings      SegmentEndpointMapping[]
+  serviceAllocations    ServiceAllocation[]
+  serviceRouteHops      ServiceRouteHop[]
+  utilizationMetrics    UtilizationMetric[]      @relation("SegmentUtilizationMetric")
+  alertEvents           AlertEvent[]             @relation("SegmentAlertEvent")
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  @@index([sitePairKey])
+  @@index([segmentGroupName])
+  @@index([segmentSequence])
+  @@index([sourceSegmentKey])
+  @@index([spanType])
+  @@index([inventoryClass])
+  @@index([cableId])
+  @@index([status])
+  @@index([status, updatedAt])
+  @@index([allocatedServiceCode])
+  @@index([segmentDefaultRole])
+  @@index([importBatchId])
+}
+
+model SegmentFiber {
+  id                  String             @id @default(cuid())
+  segmentId           String
+  fiberNumber         Int
+  status              ResourceStatus     @default(AVAILABLE)
+  serviceId           String?
+  serviceRouteId      String?
+  serviceAllocationId String?
+  serviceCode         String?
+  allocationGroup     String?
+  pathOrder           Int?
+  isJumper            Boolean            @default(false)
+  label               String?
+  tubeNumber          Int?
+  tubeColor           String?
+  tubeLabel           String?
+  fiberPortNumber     Int?
+  fiberLabel          String?
+  allocatedAt         DateTime?
+  remarks             String?
+  segment             LinkSegment        @relation(fields: [segmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  service             Service?           @relation(fields: [serviceId], references: [id])
+  serviceRoute        ServiceRoute?      @relation(fields: [serviceRouteId], references: [id])
+  serviceAllocation   ServiceAllocation? @relation(fields: [serviceAllocationId], references: [id])
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@unique([segmentId, fiberNumber])
+  @@index([segmentId, status])
+  @@index([serviceCode])
+  @@index([serviceId])
+  @@index([serviceRouteId])
+  @@index([serviceAllocationId])
+  @@index([allocationGroup])
+}
+
+model SegmentEndpointMapping {
+  id                 String            @id @default(cuid())
+  segmentId          String
+  importStagingRowId String?
+  localSiteCode      String?
+  localRackCode      String?
+  localOdfCode       String?
+  localPortLabel     String?
+  farSiteCode        String?
+  farEndpointLabel   String?
+  farRackCode        String?
+  farOdfCode         String?
+  farPortLabel       String?
+  localPortGroupId   String?
+  farPortGroupId     String?
+  fiberNumbersJson   String?
+  serviceCode        String?
+  childTopologyRole  String?
+  tag                String?
+  // Comma-separated set of canonical site keys that are jumpers on this mapping.
+  // Previously added at runtime via raw SQL; now schema-managed.
+  jumperSiteCode     String?
+  status             ResourceStatus    @default(AVAILABLE)
+  source             RecordSource      @default(IMPORT)
+  remarks            String?
+  segment            LinkSegment       @relation(fields: [segmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  importStagingRow   ImportStagingRow? @relation(fields: [importStagingRowId], references: [id])
+  localPortGroup     PortGroup?        @relation("SegmentEndpointMappingLocalPortGroup", fields: [localPortGroupId], references: [id])
+  farPortGroup       PortGroup?        @relation("SegmentEndpointMappingFarPortGroup", fields: [farPortGroupId], references: [id])
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([segmentId])
+  @@index([segmentId, status])
+  @@index([importStagingRowId])
+  @@index([serviceCode])
+  @@index([serviceCode, status])
+  @@index([childTopologyRole])
+  @@index([tag])
+  @@index([jumperSiteCode])
+  @@index([localSiteCode, farSiteCode])
+  @@index([localSiteCode, status])
+  @@index([farSiteCode, status])
+  @@index([localOdfCode, localPortLabel])
+  @@index([farOdfCode, farPortLabel])
+  @@index([localPortGroupId])
+  @@index([farPortGroupId])
+}
+
+model Service {
+  id            String              @id @default(cuid())
+  serviceCode   String              @unique
+  serviceName   String
+  serviceType   String
+  customerName  String?
+  status        ServiceStatus       @default(ACTIVE)
+  remarks       String?
+  routes        ServiceRoute[]
+  allocations   ServiceAllocation[]
+  segmentFibers SegmentFiber[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([serviceType])
+  @@index([status])
+}
+
+model ServiceRoute {
+  id             String              @id @default(cuid())
+  serviceId      String
+  routeName      String
+  routeType      RouteType
+  priority       Int                 @default(1)
+  isActive       Boolean             @default(true)
+  slaClass       String?
+  protectionMode String?
+  remarks        String?
+  service        Service             @relation(fields: [serviceId], references: [id])
+  hops           ServiceRouteHop[]
+  allocations    ServiceAllocation[]
+  segmentFibers  SegmentFiber[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([serviceId, routeType])
+  @@index([isActive])
+}
+
+model ServiceAllocation {
+  id                   String           @id @default(cuid())
+  serviceId            String
+  serviceRouteId       String?
+  segmentId            String
+  allocationGroup      String
+  pathOrder            Int
+  fromSiteId           String?
+  toSiteId             String?
+  endpointAId          String?
+  endpointBId          String?
+  endpointAPortGroupId String?
+  endpointBPortGroupId String?
+  fiberStart           Int
+  fiberEnd             Int
+  fiberNumbersJson     String
+  status               ResourceStatus   @default(USED)
+  isJumper             Boolean          @default(false)
+  isProtection         Boolean          @default(false)
+  pathLabel            String?
+  remarks              String?
+  service              Service          @relation(fields: [serviceId], references: [id])
+  serviceRoute         ServiceRoute?    @relation(fields: [serviceRouteId], references: [id])
+  segment              LinkSegment      @relation(fields: [segmentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  fromSite             Site?            @relation("ServiceAllocationFromSite", fields: [fromSiteId], references: [id])
+  toSite               Site?            @relation("ServiceAllocationToSite", fields: [toSiteId], references: [id])
+  endpointA            SegmentEndpoint? @relation("ServiceAllocationEndpointA", fields: [endpointAId], references: [id])
+  endpointB            SegmentEndpoint? @relation("ServiceAllocationEndpointB", fields: [endpointBId], references: [id])
+  endpointAPortGroup   PortGroup?       @relation("ServiceAllocationEndpointAPortGroup", fields: [endpointAPortGroupId], references: [id])
+  endpointBPortGroup   PortGroup?       @relation("ServiceAllocationEndpointBPortGroup", fields: [endpointBPortGroupId], references: [id])
+  fibers               SegmentFiber[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([serviceId])
+  @@index([serviceRouteId])
+  @@index([segmentId])
+  @@index([allocationGroup])
+  @@index([pathOrder])
+  @@index([fromSiteId, toSiteId])
+  @@index([status])
+}
+
+model ServiceRouteHop {
+  id              String       @id @default(cuid())
+  serviceRouteId  String
+  hopOrder        Int
+  siteId          String?
+  rackId          String?
+  odfId           String?
+  portGroupId     String?
+  segmentId       String?
+  pathLabel       String?
+  distanceKm      Float?
+  isProtectionHop Boolean      @default(false)
+  remarks         String?
+  serviceRoute    ServiceRoute @relation(fields: [serviceRouteId], references: [id])
+  site            Site?        @relation(fields: [siteId], references: [id])
+  rack            Rack?        @relation(fields: [rackId], references: [id])
+  odf             ODF?         @relation(fields: [odfId], references: [id])
+  portGroup       PortGroup?   @relation(fields: [portGroupId], references: [id])
+  segment         LinkSegment? @relation(fields: [segmentId], references: [id])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([serviceRouteId, hopOrder])
+  @@index([siteId])
+  @@index([segmentId])
+}
+
+model UtilizationMetric {
+  id              String       @id @default(cuid())
+  metricType      MetricType
+  scopeSegmentId  String?
+  scopeSiteId     String?
+  scopeOdfId      String?
+  scopeCableId    String?
+  sitePairKey     String?
+  totalGroups     Int          @default(0)
+  usedGroups      Int          @default(0)
+  spareGroups     Int          @default(0)
+  reservedGroups  Int          @default(0)
+  faultyGroups    Int          @default(0)
+  utilizationPct  Float        @default(0)
+  denominatorNote String?
+  calculationNote String?
+  measuredAt      DateTime
+  source          RecordSource @default(SYSTEM)
+  segment         LinkSegment? @relation("SegmentUtilizationMetric", fields: [scopeSegmentId], references: [id])
+  site            Site?        @relation("SiteUtilizationMetric", fields: [scopeSiteId], references: [id])
+  odf             ODF?         @relation("OdfUtilizationMetric", fields: [scopeOdfId], references: [id])
+  cable           Cable?       @relation("CableUtilizationMetric", fields: [scopeCableId], references: [id])
+  alertEvents     AlertEvent[] @relation("MetricAlertEvent")
+  createdAt       DateTime     @default(now())
+
+  @@index([metricType, measuredAt])
+  @@index([scopeSegmentId])
+  @@index([scopeSiteId])
+  @@index([scopeOdfId])
+  @@index([scopeCableId])
+  @@index([sitePairKey])
+}
+
+model AlertPolicy {
+  id                   String              @id @default(cuid())
+  code                 String              @unique
+  name                 String
+  alertType            AlertType
+  metricType           MetricType?
+  enabled              Boolean             @default(true)
+  warningThresholdPct  Float?
+  criticalThresholdPct Float?
+  consecutiveHits      Int                 @default(1)
+  cooldownMinutes      Int                 @default(60)
+  hysteresisPct        Float               @default(5)
+  notificationChannel  NotificationChannel @default(EMAIL)
+  notifyEmails         String?
+  allowManualSuppress  Boolean             @default(true)
+  notes                String?
+  suppressions         AlertSuppression[]
+  events               AlertEvent[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([alertType, enabled])
+}
+
+model AlertSuppression {
+  id            String       @id @default(cuid())
+  alertPolicyId String
+  targetType    String
+  targetId      String?
+  sitePairKey   String?
+  reason        String
+  startsAt      DateTime
+  endsAt        DateTime
+  createdById   String
+  alertPolicy   AlertPolicy  @relation(fields: [alertPolicyId], references: [id])
+  createdBy     User         @relation("AlertSuppressionCreatedBy", fields: [createdById], references: [id])
+  events        AlertEvent[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([alertPolicyId])
+  @@index([targetType, targetId])
+  @@index([sitePairKey])
+  @@index([startsAt, endsAt])
+}
+
+model AlertEvent {
+  id               String             @id @default(cuid())
+  alertPolicyId    String
+  alertType        AlertType
+  severity         AlertSeverity
+  state            AlertState         @default(OPEN)
+  linkSegmentId    String?
+  siteId           String?
+  odfId            String?
+  metricId         String?
+  suppressionId    String?
+  sitePairKey      String?
+  title            String
+  message          String?
+  hitCount         Int                @default(1)
+  firstSeenAt      DateTime
+  lastSeenAt       DateTime
+  acknowledgedById String?
+  acknowledgedAt   DateTime?
+  clearedAt        DateTime?
+  alertPolicy      AlertPolicy        @relation(fields: [alertPolicyId], references: [id])
+  segment          LinkSegment?       @relation("SegmentAlertEvent", fields: [linkSegmentId], references: [id])
+  site             Site?              @relation("SiteAlertEvent", fields: [siteId], references: [id])
+  odf              ODF?               @relation("OdfAlertEvent", fields: [odfId], references: [id])
+  metric           UtilizationMetric? @relation("MetricAlertEvent", fields: [metricId], references: [id])
+  suppression      AlertSuppression?  @relation(fields: [suppressionId], references: [id])
+  acknowledgedBy   User?              @relation("AlertAcknowledgedBy", fields: [acknowledgedById], references: [id])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([alertPolicyId, state])
+  @@index([linkSegmentId])
+  @@index([siteId])
+  @@index([sitePairKey])
+  @@index([severity])
+}
+
+model NotificationTemplate {
+  id               String              @id @default(cuid())
+  code             String              @unique
+  name             String
+  channel          NotificationChannel @default(EMAIL)
+  subject          String
+  body             String
+  placeholdersJson String?
+  isActive         Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+}
+
+/// Parallel, Trace-Route-specific deployment email template. Kept separate from
+/// NotificationTemplate (which powers the Excel-export / alert emails) so the
+/// "Deployment instructions" flow has its own first-class TO / CC / body fields.
+model DeploymentEmailTemplate {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  name             String
+  module           String   @default("TRACE_ROUTE")
+  toAlias          String?
+  ccAlias          String?
+  subject          String
+  body             String
+  signature        String?
+  attachTraceSheet Boolean  @default(true)
+  inlineCanvas     Boolean  @default(true)
+  canvasMaxWidthPx Int      @default(600)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model SmtpConfiguration {
+  id                String    @id @default(cuid())
+  name              String    @default("Default SMTP")
+  host              String?
+  port              Int?
+  username          String?
+  encryptedPassword String?
+  senderName        String?
+  senderEmail       String?
+  replyTo           String?
+  encryptionType    String    @default("STARTTLS")
+  isActive          Boolean   @default(true)
+  lastTestAt        DateTime?
+  lastTestStatus    String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model RecipientGroup {
+  id          String                 @id @default(cuid())
+  code        String                 @unique
+  name        String
+  description String?
+  isActive    Boolean                @default(true)
+  members     RecipientGroupMember[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+}
+
+model RecipientGroupMember {
+  id               String         @id @default(cuid())
+  recipientGroupId String
+  email            String
+  displayName      String?
+  recipientGroup   RecipientGroup @relation(fields: [recipientGroupId], references: [id])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([recipientGroupId, email])
+  @@index([email])
+}
+
+model NotificationLog {
+  id           String              @id @default(cuid())
+  channel      NotificationChannel
+  recipient    String
+  subject      String?
+  body         String?
+  status       String
+  error        String?
+  userId       String?
+  alertEventId String?
+  metadataJson String?
+  user         User?               @relation("NotificationLogUser", fields: [userId], references: [id])
+  createdAt    DateTime            @default(now())
+
+  @@index([channel, status])
+  @@index([recipient])
+  @@index([userId])
+}
+
+/// Per-category weekly alert report schedule. Each row drives one report
+/// (reportKey) emailed on a chosen weekday/time. lastSentAt makes the scheduler
+/// restart-safe (one send per week). Thresholds/minNodes parameterise the report.
+model WeeklyReportSchedule {
+  id                 String    @id @default(cuid())
+  reportKey          String    @unique
+  name               String
+  enabled            Boolean   @default(false)
+  dayOfWeek          Int       @default(1)
+  sendHour           Int       @default(7)
+  sendMinute         Int       @default(0)
+  warnThresholdPct   Float?
+  critThresholdPct   Float?
+  minNodes           Int?
+  recipients         String?
+  recipientGroupCode String?
+  includeConfigured  Boolean   @default(false)
+  emailSubject       String?
+  emailBody          String?
+  lastSentAt         DateTime?
+  lastStatus         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+/// Admin-editable plain-language definitions for the Topology alert rule
+/// (single-homed rings, spurs, spur chains, inactive links). Previously a runtime
+/// CREATE TABLE; now schema-managed.
+model AlertDefinition {
+  key        String   @id
+  label      String
+  definition String
+  updatedAt  DateTime @updatedAt
+}
+
+model ImportBatch {
+  id              String             @id @default(cuid())
+  batchCode       String             @unique
+  fileName        String
+  fileChecksum    String?
+  sourceSystem    String?
+  templateVersion String?
+  status          ImportBatchStatus  @default(UPLOADED)
+  uploadedById    String
+  reviewedById    String?
+  committedById   String?
+  uploadedAt      DateTime           @default(now())
+  reviewedAt      DateTime?
+  committedAt     DateTime?
+  totalRows       Int                @default(0)
+  validRows       Int                @default(0)
+  warningRows     Int                @default(0)
+  errorRows       Int                @default(0)
+  committedRows   Int                @default(0)
+  summaryText     String?
+  comments        String?
+  uploadedBy      User               @relation("ImportUploadedBy", fields: [uploadedById], references: [id])
+  reviewedBy      User?              @relation("ImportReviewedBy", fields: [reviewedById], references: [id])
+  committedBy     User?              @relation("ImportCommittedBy", fields: [committedById], references: [id])
+  stagingRows     ImportStagingRow[]
+  issues          ImportIssue[]
+  linkSegments    LinkSegment[]
+  splitters       Splitter[]
+  auditLogs       AuditLog[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([status])
+  @@index([uploadedById])
+}
+
+model ImportStagingRow {
+  id                   String                   @id @default(cuid())
+  importBatchId        String
+  rowNumber            Int
+  status               ImportRowStatus          @default(STAGED)
+  rawJson              String
+  normalizedJson       String?
+  normalizedSiteAId    String?
+  normalizedSiteBId    String?
+  proposedSegmentCode  String?
+  mirrorKey            String?
+  rowHash              String?
+  duplicateOfSegmentId String?
+  reviewerComment      String?
+  importBatch          ImportBatch              @relation(fields: [importBatchId], references: [id])
+  normalizedSiteA      Site?                    @relation("StagingNormalizedSiteA", fields: [normalizedSiteAId], references: [id])
+  normalizedSiteB      Site?                    @relation("StagingNormalizedSiteB", fields: [normalizedSiteBId], references: [id])
+  issues               ImportIssue[]
+  endpointMappings     SegmentEndpointMapping[]
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  @@unique([importBatchId, rowNumber])
+  @@index([status])
+  @@index([mirrorKey])
+  @@index([rowHash])
+}
+
+model ImportIssue {
+  id            String            @id @default(cuid())
+  importBatchId String
+  stagingRowId  String?
+  severity      IssueSeverity
+  issueCode     String
+  fieldName     String?
+  message       String
+  suggestedFix  String?
+  blocking      Boolean           @default(true)
+  resolved      Boolean           @default(false)
+  resolvedById  String?
+  resolvedAt    DateTime?
+  importBatch   ImportBatch       @relation(fields: [importBatchId], references: [id])
+  stagingRow    ImportStagingRow? @relation(fields: [stagingRowId], references: [id])
+  resolvedBy    User?             @relation("ImportIssueResolvedBy", fields: [resolvedById], references: [id])
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([importBatchId, severity])
+  @@index([stagingRowId])
+  @@index([resolved])
+}
+
+model Splitter {
+  id                      String             @id @default(cuid())
+  splitterCode            String             @unique
+  splitterName            String?
+  /// V27 display type: OSP_SPL / ISP_SPL. Kept as String for backward compatibility with existing OSP/ISP enum scope.
+  splitterType            String?            @default("OSP_SPL")
+  scope                   SplitterScope
+  /// For OSP_SPL this is HH/JT/cabinet housing; for ISP_SPL this is building/property/customer environment.
+  location                String?
+  locationContext         String?
+  handhole                String?
+  cabinet                 String?
+  protectionMode          SplitterProtection @default(UNKNOWN)
+  primaryInputSiteCode    String?
+  primaryInputRackCode    String?
+  primaryInputOdfCode     String?
+  primaryInputPortLabel   String?
+  secondaryInputSiteCode  String?
+  secondaryInputRackCode  String?
+  secondaryInputOdfCode   String?
+  secondaryInputPortLabel String?
+  outputPortCapacity      Int?
+  configuredOutputPorts   Int                @default(0)
+  status                  ResourceStatus     @default(ACTIVE)
+  source                  RecordSource       @default(IMPORT)
+  importBatchId           String?
+  sourceRowReferencesJson String?
+  remarks                 String?
+  importBatch             ImportBatch?       @relation(fields: [importBatchId], references: [id])
+  outputs                 SplitterOutput[]
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  @@index([scope])
+  @@index([status])
+  @@index([importBatchId])
+  @@index([primaryInputSiteCode])
+}
+
+model SplitterOutput {
+  id                         String         @id @default(cuid())
+  splitterId                 String
+  outputLabel                String?
+  outputPort                 String?
+  localSiteCode              String?
+  localRackCode              String?
+  localOdfCode               String?
+  localPortLabel             String?
+  destinationSiteCode        String?
+  destinationLabel           String?
+  destinationRackCode        String?
+  destinationOdfCode         String?
+  destinationPortLabel       String?
+  serviceCode                String?
+  sharingCustomerServiceId   String?
+  sharingCustomerServiceCode String?
+  capacityFibers             Int            @default(1)
+  usedFibers                 Int            @default(0)
+  availableFibers            Int            @default(1)
+  status                     ResourceStatus @default(AVAILABLE)
+  portGroupId                String?
+  remarks                    String?
+  splitter                   Splitter       @relation(fields: [splitterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  portGroup                  PortGroup?     @relation(fields: [portGroupId], references: [id])
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+
+  @@index([splitterId])
+  @@index([serviceCode])
+  @@index([destinationSiteCode])
+  @@index([sharingCustomerServiceId])
+  @@index([sharingCustomerServiceCode])
+  @@index([portGroupId])
+}
+
+model AuditLog {
+  id            String       @id @default(cuid())
+  entityType    String
+  entityId      String
+  action        ChangeAction
+  fieldName     String?
+  oldValue      String?
+  newValue      String?
+  reason        String?
+  comment       String?
+  changedById   String?
+  importBatchId String?
+  ipAddress     String?
+  userAgent     String?
+  changedBy     User?        @relation(fields: [changedById], references: [id])
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id])
+  createdAt     DateTime     @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([changedById])
+  @@index([importBatchId])
+}
+
+model SystemChangeLog {
+  id            String    @id @default(cuid())
+  timestamp     DateTime  @default(now())
+  operatorId    String?
+  actionType    String
+  targetTable   String
+  targetId      String
+  originalState Json?
+  newState      Json?
+  batchId       String?
+  revertedAt    DateTime?
+  revertedBy    String?
+
+  @@index([timestamp])
+  @@index([batchId])
+  @@index([targetTable, targetId])
+  @@index([revertedAt])
+}
+
+model UtilizationHistory {
+  id              String   @id @default(cuid())
+  capturedAt      DateTime @default(now())
+  sourceTable     String
+  sourceId        String
+  segmentName     String?
+  siteId          String?
+  rackId          String?
+  odfId           String?
+  totalFibers     Int?
+  activeFibers    Int?
+  availableFibers Int?
+  snapshot        Json
+
+  @@index([capturedAt])
+  @@index([sourceTable, sourceId])
+  @@index([siteId])
+  @@index([odfId])
+}
+
+model ImportMetadata {
+  id           String   @id @default(cuid())
+  filename     String
+  storedPath   String?
+  uploadedBy   String?
+  uploadedAt   DateTime @default(now())
+  successCount Int      @default(0)
+  failedCount  Int      @default(0)
+  status       String   @default("COMPLETED")
+  batchId      String?
+
+  @@index([batchId])
+  @@index([uploadedAt])
+}
+
+enum PendingDeletionStatus {
+  PENDING
+  CANCELLED
+  PURGED
+}
+
+enum PendingDeletionEntityType {
+  ODF
+  SEGMENT
+}
+
+// Delayed-deletion (soft-delete hold) ledger for ODF rows and ODF Mapping
+// segments. A delete request with zero live dependencies no longer purges
+// immediately: it parks here for a 24-working-hour reversal window computed on
+// the GCC business-day calendar (Sun-Thu working week; weekends and configured
+// national holidays pause the countdown). Intentionally relation-free so the
+// purge worker can hard-delete the target rows without FK coupling.
+model PendingDeletion {
+  id               String                    @id @default(cuid())
+  entityType       PendingDeletionEntityType
+  entityId         String
+  entityLabel      String?
+  // Groups a multi-select segment deletion; a two-adjacent-segment group with
+  // mergeTopology=true purges as a Reverse Split (boundary merge) instead of a
+  // plain hard delete.
+  deleteGroupId    String?
+  mergeTopology    Boolean                   @default(false)
+  requestedById    String?
+  requestedAt      DateTime                  @default(now())
+  // GCC-aware purge deadline cached at request time; the sweeper re-derives the
+  // effective deadline from requestedAt so later-added holidays still extend it.
+  scheduledPurgeAt DateTime
+  status           PendingDeletionStatus     @default(PENDING)
+  cancelledAt      DateTime?
+  purgedAt         DateTime?
+  purgeError       String?
+  reason           String?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  @@index([status, scheduledPurgeAt])
+  @@index([entityType, entityId, status])
+  @@index([deleteGroupId])
+}
+
+// Isolated Attachments/Documents module. Intentionally has NO relations to
+// LinkSegment/Site so it stays decoupled from split/rehome/trace/ODF/import
+// logic. Files live on disk under storage/attachments/**; only metadata is here.
+model SegmentAttachment {
+  id               String   @id @default(uuid())
+  segmentId        String?
+  siteId           String?
+  documentType     String // FDD, ODF_PHOTO, OTDR_REPORT, ATP, HANDOVER, SITE_PHOTO, OTHER
+  originalFilename String
+  storedFilename   String
+  storagePath      String
+  mimeType         String
+  fileSizeBytes    Int
+  uploadedBy       String
+  uploadedAt       DateTime @default(now())
+  remarks          String?
+  site             Site?    @relation(fields: [siteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([segmentId])
+  @@index([siteId])
+  @@index([documentType])
+  @@index([uploadedAt])
+}

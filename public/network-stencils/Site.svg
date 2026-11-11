@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 394 549" width="394" height="549" role="img" aria-labelledby="title desc">
+  <title id="title">Telecom Tower Icon</title>
+  <desc id="desc">A stylized telecom tower with a transparent background, purple structure, blue side panels, and orange signal dishes.</desc>
+  <defs>
+    <style>
+      .purple{stroke:#4B1D66;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;}
+      .purple-thin{stroke:#4B1D66;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;}
+      .blue{fill:#55BFEA;stroke:#4B1D66;stroke-width:7;stroke-linejoin:round;}
+      .gold{fill:#FFD15C;stroke:#4B1D66;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;}
+      .orange{fill:#FFA82E;}
+      .none{fill:none;}
+    </style>
+  </defs>
+
+  <!-- Transparent background: intentionally no background rectangle -->
+
+  <!-- top mast and antennas -->
+  <path class="purple" fill="none" d="M204 21V72"/>
+  <path class="purple" fill="none" d="M96 72H292"/>
+  <path class="purple" fill="none" d="M96 131H292"/>
+
+  <!-- side blue antenna panels -->
+  <rect class="blue" x="73" y="48" width="23" height="114" rx="2"/>
+  <rect class="blue" x="292" y="48" width="23" height="114" rx="2"/>
+  <path class="purple-thin none" d="M96 48v26h101"/>
+  <path class="purple-thin none" d="M292 48v26H197"/>
+  <path class="purple-thin none" d="M96 96v66"/>
+  <path class="purple-thin none" d="M292 96v66"/>
+
+  <!-- tower outer frame -->
+  <path class="purple" fill="none" d="M197 75L105 523"/>
+  <path class="purple" fill="none" d="M197 75L282 523"/>
+  <path class="purple" fill="none" d="M118 488H270"/>
+  <path class="purple" fill="none" d="M126 448H263"/>
+  <path class="purple" fill="none" d="M132 406H257"/>
+  <path class="purple" fill="none" d="M139 366H248"/>
+  <path class="purple" fill="none" d="M146 324H242"/>
+  <path class="purple" fill="none" d="M154 284H235"/>
+  <path class="purple" fill="none" d="M161 243H228"/>
+  <path class="purple" fill="none" d="M168 202H220"/>
+  <path class="purple" fill="none" d="M176 162H214"/>
+  <path class="purple" fill="none" d="M181 125H211"/>
+
+  <!-- tower bracing -->
+  <path class="purple" fill="none" d="M197 75L166 124L213 162L161 202L228 243L154 284L242 324L139 366L257 406L126 448L270 488"/>
+  <path class="purple" fill="none" d="M197 75L214 124L176 162L220 202L161 243L235 284L146 324L248 366L132 406L263 448L118 488"/>
+  <path class="purple" fill="none" d="M166 124L214 124"/>
+  <path class="purple" fill="none" d="M181 85L213 124L176 162L181 85"/>
+  <path class="purple" fill="none" d="M213 85L166 124L214 162L213 85"/>
+
+  <!-- left medium dish -->
+  <path class="gold" d="M100 218C128 224 128 279 100 287Z"/>
+  <path class="purple" fill="none" d="M124 260H159"/>
+
+  <!-- right small dish -->
+  <path class="gold" d="M279 169C252 174 252 211 279 219Z"/>
+  <path class="purple" fill="none" d="M253 197H222"/>
+
+  <!-- circular equipment on tower -->
+  <circle class="gold" cx="256" cy="314" r="30"/>
+  <circle class="orange" cx="256" cy="314" r="12"/>
+  <path class="purple" fill="none" d="M234 314H221"/>
+
+  <!-- lower left circular antenna -->
+  <circle class="gold" cx="126" cy="376" r="35"/>
+  <circle class="orange" cx="126" cy="376" r="19"/>
+  <circle fill="#FFD15C" cx="126" cy="376" r="9"/>
+  <path class="purple" fill="none" d="M160 385H210"/>
+
+  <!-- base -->
+  <path class="purple" fill="none" d="M19 525H374"/>
+</svg>
